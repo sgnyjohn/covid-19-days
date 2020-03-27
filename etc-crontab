@@ -1,0 +1,2 @@
+#toda hora aos 26 min
+26 * * * * user	bash /var/http/coronavirus/bxOMS.sh
