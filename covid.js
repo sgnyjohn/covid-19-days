@@ -9,6 +9,7 @@ function covid() {
 	var ds;
 	var bd;
 	var Pais = 'Brazil';
+	var dt; //data max do país
 	var fs = function(a,b) {
 			return fSort(strZero(a[3],5)+strZero(a[4],5),strZero(b[3],5)+strZero(b[4],5),true);
 		};
@@ -23,7 +24,13 @@ function covid() {
 	//***************************
 	function click(ev) {
 		var o = targetEvent(ev);
-		if (o.tagName != 'tr') {
+		//lert('o='+o.tagName+' '+o);
+		if (o.tagName=='SELECT') {
+			Pais = o.value;
+			ds.innerHTML = '';
+			mostra();
+			return;
+		} if (o.tagName != 'tr') {
 			//bjNav(o);alert(1);
 			o = getParentByTagName(o,'tr');
 		}
@@ -68,12 +75,18 @@ function covid() {
 	//***************************
 	function mostra() {
 		var u = 'https://covid.ourworldindata.org';
-		domObj({tag:'p',style:'float:right;font-size:80%;text-align:right;'
-			,'':'fonte: <a href='+u+'>'+u+'</a>'
+		var rr='<option>(country)~';
+		bd.eval(function(){
+			if (rr.indexOf('>'+bd.get('location')+'~')==-1)
+				rr += '<option>'+bd.get('location')+'~';
+		});
+		domObj({tag:'select',style:'float:right;font-size:80%;color:red;'
+			,'':troca(rr,'~','')
+			,ev_change:click
 		,targ:ds});
 		
-		//procura br 
-		var dt='';
+		//procura pais e pega days maximos do país
+		dt=''; 
 		bd.top();
 		while (bd.next()) {
 			if (bd.get('location')==Pais && dt<bd.get('date') ) {
@@ -85,12 +98,13 @@ function covid() {
 		//mostra evol br ult 7 days
 		var bl = new bancoDados('evol '+Pais);
 		bl.className = 'eGeral';
+		//lert('dt='+dt);
 		for (var i=0;i<7;i++) {
 			bl.addReg(); 
 			aeval(days,function(x) {
-					bl.set('date',leftAt(dataSql(strToData(dt).getTime()-(x[3]-i+2)*1000*3600*24),' '));
+					bl.set('date',leftAt(dataSql(strToData(dt).getTime()-(6-i)*1000*3600*24),' '));
 					var d = x[3]-(6-i);
-					bl.set('day '+x[0],(d<1?'-':d));
+					bl.set('day '+x[0],(d<1?'-':d+'º day'));
 					bl.set('position '+x[0],(d<1?'-':getPos(Pais,x[0],x[3]-(6-i))+'º'));
 			});
 		}
@@ -127,6 +141,10 @@ function covid() {
 
 		vd.sort(fs);
 		domObj({tag:'h2','':'world '+dt,targ:ds});bd.toDom(ds,999,vd);
+
+		domObj({tag:'p',style:'float:right;font-size:80%;text-alignx:right;'
+			,'':'fonte: <a href='+u+'>'+u+'</a>'
+		,targ:ds});
 
 		setTimeout(mostra1,500);
 	}
