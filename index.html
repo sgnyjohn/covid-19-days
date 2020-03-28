@@ -3,20 +3,36 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 
 <head>
-<title>covid19 country days</title>
+<title>covid19 days</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<script charset="UTF-8"  language="JavaScript" src="/js/funcoes.js?md5=16de860f8cabb3d63cca80160621afa6"></script>
-<script charset="UTF-8"  language="JavaScript" src="/js/funcoes1.js?md5=3fd7ad6bd2ce6bb6f3c1f2256484532a"></script>
-<script charset="UTF-8"  language="JavaScript" src="/js/dialogo.js?md5=8c9fd7e8e4e155e7d4f25c7bf106a7c4"></script>
-<script charset="UTF-8"  language="JavaScript" src="/js/jan.js?md5=6f22fa4100af252bb5b9dc916afb2896"></script>
+<script charset="UTF-8"  language="JavaScript" src="/js/funcoes.js"></script>
+<script charset="UTF-8"  language="JavaScript" src="/js/funcoes1.js"></script>
+<script charset="UTF-8"  language="JavaScript" src="/js/dialogo.js"></script>
+<script charset="UTF-8"  language="JavaScript" src="/js/jan.js"></script>
 <script charset="UTF-8"  language="JavaScript" src="covid.js"></script>
 </head>
 
 <style>
+
+BODY {
+	background-color:#CFEFFF;
+}
+
+table tr:nth-child(2n) {
+	background-color:#BFDFEF;
+}
+
+table tr:first-child th {
+    font-size: 80%;
+}
+
 table.bdToDom td, table.eGeral td { text-align: center; }
 table.bdToDom th:nth-last-child(6),
 table.bdToDom td:nth-last-child(6) {
-    text-align: right;
+    text-align: center;
+}
+table.bdToDom td:nth-last-child(7):hover {
+    background-color:#FF9999;
 }
 .B TD {font-weight:bold;color:red;}
 </style>

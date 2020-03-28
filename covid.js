@@ -14,11 +14,15 @@ function covid() {
 			return fSort(strZero(a[3],5)+strZero(a[4],5),strZero(b[3],5)+strZero(b[4],5),true);
 		};
 	var days = [
-		['days+50c','days total_cases > 50'
+		['days+50c','day (total_cases > 50)'
 			,function() {return bd.get('total_cases')*1>50?bd.get('days+50c',0,-1)*1+1:0} ]
-		,['days+20d','days total_deaths > 20'
+		,['days+20d','day (total_deaths > 20)'
 			,function() {return bd.get('total_deaths')*1>20?bd.get('days+20d',0,-1)*1+1:0} ]
 	];
+	var tag = {'américa do sul':'~Argentina~Bolivia~Bouvet Island~Brazil~Chile~Colombia~Ecuador~Falkland Islands~French Guiana~Guyana~Paraguay~Peru~South Georgia~South Sandwich Islands~Suriname~Uruguay~Venezuela~'
+		,'américa central':'~Belize~Costa Rica~El Salvador~Guatemala~Honduras~Nicaragua~Panama~'
+		,'américa do norte':'~Anguilla~Antigua and Barbuda~Aruba~The Bahamas~Barbados~Belize~Bermuda~Bonaire~British Virgin Islands~Canada~Cayman Islands~Clipperton Island~Costa Rica~Cuba~Curaçao~Dominica~Dominican Republic~El Salvador~Federal Dependencies of Venezuela~Greenland~Grenada~Guadeloupe~Guatemala~Haiti~Honduras~Jamaica~Martinique~Mexico~Montserrat~Nicaragua~Nueva Esparta~Panama~Puerto Rico~Saba~San Andrés and Providencia~Saint Barthélemy~Saint Kitts and Nevis~Saint Lucia~Saint Martin~Saint Pierre and Miquelon~Saint Vincent and the Grenadines~Sint Eustatius~Sint Maarten~Trinidad and Tobago~Turks and Caicos Islands~United States~United States Virgin Islands~'
+	}
 	//lert('days='+days);
 	setTimeout(init,1000);
 	//***************************
@@ -74,28 +78,33 @@ function covid() {
 	}
 	//***************************
 	function mostra() {
-		var u = 'https://covid.ourworldindata.org';
+		//procura pais e pega dt, days maximos do país
+		//	e monta option selects
+		dt=''; 
+		bd.top();
 		var rr='<option>(country)~';
 		bd.eval(function(){
+			//options
 			if (rr.indexOf('>'+bd.get('location')+'~')==-1)
 				rr += '<option>'+bd.get('location')+'~';
+			//dt e max dias
+			if (bd.get('location')==Pais && dt<bd.get('date') ) {
+				dt = bd.get('date');
+				aeval(days,function(x) {x[3] = bd.get(x[0]);}); //days maximos
+			} 
 		});
+		
+		//mostra dada
+		domObj({tag:'h1',style:'margin:0;color:red;'
+			,'':dt
+		,targ:ds});
+		//select country
 		domObj({tag:'select',style:'float:right;font-size:80%;color:red;'
 			,'':troca(rr,'~','')
 			,ev_change:click
 		,targ:ds});
 		
-		//procura pais e pega days maximos do país
-		dt=''; 
-		bd.top();
-		while (bd.next()) {
-			if (bd.get('location')==Pais && dt<bd.get('date') ) {
-				dt = bd.get('date');
-				aeval(days,function(x) {x[3] = bd.get(x[0]);}); //days maximos
-			} 
-		}
-		
-		//mostra evol br ult 7 days
+		//monta evol ranking pais ult 7 days
 		var bl = new bancoDados('evol '+Pais);
 		bl.className = 'eGeral';
 		//lert('dt='+dt);
@@ -108,21 +117,23 @@ function covid() {
 					bl.set('position '+x[0],(d<1?'-':getPos(Pais,x[0],x[3]-(6-i))+'º'));
 			});
 		}
-		domObj({tag:'h2','':'Evolution of the position '+Pais,targ:ds});bl.toDom(ds,999);		
 		
-		//lert('dt='+dt+' dc='+dc+' dm='+dm);
-		//date 0,location 1,new_cases 2,new_deaths 3,total_cases 4,total_deaths 5+days_c50 6+days_Nzero 7
+		// monta resumo pais, mundo e dias
+		// date 0,location 1,new_cases 2,new_deaths 3,total_cases 4,total_deaths 5+days_c50 6+days_Nzero 7
 		bd.top();
 		var vd=[],vp=[];
 		aeval(days,function(x){x[4]=[];});
 		while (bd.next()) {
+			//dados pais
 			if (bd.get('location')==Pais && bd.get('new_cases'  ,0)*1+bd.get('new_deaths'  ,0)*1
 					+bd.get('total_cases',0)*1+bd.get('total_deaths',0)*1>0 ) {
 				vp[vp.length] = bd.getVetor();
 			}
+			//dados mundo
 			if (bd.get('date')==dt) {
 				vd[vd.length] = bd.getVetor();
 			}
+			//dados dias
 			aeval(days,function(x) {
 				if (bd.get(x[0])==x[3]) { //igual ao days do pais
 					x[4][x[4].length] = bd.getVetor();
@@ -130,18 +141,25 @@ function covid() {
 			});
 		}
 
-		//mostra
+		//mostra dias
 		aeval(days,function(x) {
 			x[4].sort(fs);
-			domObj({tag:'h2','':Pais+' '+x[3]+' '+x[1],targ:ds});
+			domObj({tag:'h2','':Pais+' '+x[3]+'º '+x[1],targ:ds});
 			bd.toDom(ds,999,x[4]);
 		});
 		
+		//ranking dias do país
+		domObj({tag:'h2','':'Evolution of the position: '+Pais,targ:ds});bl.toDom(ds,999);		
+		
+		//dados país
 		domObj({tag:'h2','':Pais+' '+dt,targ:ds});bd.toDom(ds,999,vp);
 
+		//dados do mundo
 		vd.sort(fs);
 		domObj({tag:'h2','':'world '+dt,targ:ds});bd.toDom(ds,999,vd);
 
+		//fonte dados
+		var u = 'https://covid.ourworldindata.org';
 		domObj({tag:'p',style:'float:right;font-size:80%;text-alignx:right;'
 			,'':'fonte: <a href='+u+'>'+u+'</a>'
 		,targ:ds});
@@ -172,6 +190,10 @@ function covid() {
 			bd = new bancoDados();
 			bd.dlCol = ','; 
 			bd.setMatriz(tx);
+			//(a>b?1:(a<b?-1:0));
+			bd.sort(function(a,b) {return a[1]>b[1]?1:(a[1]<b[1]?-1:
+					(a[0]>b[0]?1:(a[0]<b[0]?-1:0)) //1a coluna = sort 2a coluna
+			);});
 			bd.top();
 			while (bd.next()) {
 				var ig = bd.get('location')==bd.get('location','?',-1); //loc atual igual anterior
