@@ -16,6 +16,7 @@
 
 BODY {
 	background-color:#CFEFFF;
+	font-family:"Droid Sans";
 }
 
 table tr:nth-child(2n) {
@@ -26,25 +27,67 @@ table tr:first-child th {
     font-size: 80%;
 }
 
-table.bdToDom td, table.eGeral td { text-align: center; }
-table.bdToDom th:nth-last-child(6),
-table.bdToDom td:nth-last-child(6) {
-    text-align: center;
+table.bdToDom th:nth-child(7)
+,table.bdToDom td:nth-child(7) {
+	color:red;
 }
-table.bdToDom td:nth-last-child(7):hover {
+
+/* center */
+table.bdToDom td, table.eGeral td { text-align: center; }
+
+/* days */
+table.days_0 th:nth-last-child(3),table.days_0 td:nth-child(8) {
+    color: blue;
+}
+table.days_1 th:nth-last-child(2),table.days_1 td:nth-child(9) {
+    color: blue;
+}
+table.days_2 th:nth-last-child(1),table.days_2 td:nth-child(10) {
+    color: blue;
+}
+
+
+/* atalho país */
+table.bdToDom td:nth-child(2) {
+    cursor:pointer;
+    text-decoration:underline;
+    color:darkblue;
+}
+table.bdToDom td:nth-child(2):hover {
     background-color:#FF9999;
 }
+
+/* grifo país */
 .B TD {font-weight:bold;color:red;}
+
+
+TABLE.graphBar {
+	font-size:66%;
+}
+
+DIV.covidCtrl {
+  position: fixed;
+  padding: 10px;
+  background-color:darkred;
+  top: 0;
+  right: 0;
+  z-index: 999;
+}
+
+TABLE.bdToDom TD,TABLE.graphBar TD.bar {
+	padding:4px 7px;
+}
+
 </style>
+
+<script>
+new covid('dstCovid');
+</script>
 
 <body>
 
-<table>
-<tr>
-	<td id=dst>
-	<td>
-
-</table>
+<div id=dstCovid>
+</div>
 
 </body>
 
