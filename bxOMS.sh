@@ -49,7 +49,34 @@ bxOurWorldInData() {
 	fi
 }
 
+bxCsv() {
+	local url="$1"
+	local tp="$2"
+	ant=$(ls -tc ${tp}full_data*.csv | head -n 1)
+	if [ "$ant" == "" ]; then
+		ant=${tp}full_dataX.csv
+		echo "" >$ant
+	fi
+	nov="${tp}full_data-$(date "+%Y-%m-%d-%H:%M:%S").csv"
+	tmp=/tmp/crona.bx
+	test -e $tmp && rm $tmp
+	wget -O $tmp "$url"
+	if [ $? -ne 0 ]; then
+		echo "erro bx "
+		rm $tmp
+	elif cmp $ant $tmp; then
+		echo "iguais"; #read
+	else
+		echo "dif"; #read
+		mv $tmp $nov
+		rm ${tp}last.csv
+		ln -s $nov ${tp}last.csv
+	fi
+}
+
+
 bxOms
 bxOurWorldInData
+bxCsv "https://opendata.ecdc.europa.eu/covid19/casedistribution/csv" "eu_"
 
 
