@@ -619,7 +619,11 @@ function covid(Id) {
 		//fonte dados
 		var u = 'https://ourworldindata.org';
 		domObj({tag:'p',style:'font-size:80%;text-align:right;'
-			,'':'data: <a href='+u+'>'+u+'</a>'
+			,'':'data world: <a href='+u+'>'+u+'</a>'
+		,targ:ds});
+		var u = 'https://covid.saude.gov.br/';
+		domObj({tag:'p',style:'font-size:80%;text-align:right;'
+			,'':'data .br: <a href='+u+'>'+u+'</a>'
 		,targ:ds});
 
 		setTimeout(mostra1,500);
