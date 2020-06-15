@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 
 <head>
-<title>covid19 days</title>
+<title>covid-19</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <script charset="UTF-8"  language="JavaScript" src="/js/func.js"></script>
 <script charset="UTF-8"  language="JavaScript" src="/js/funcoes.js"></script>
@@ -11,7 +11,6 @@
 <script charset="UTF-8"  language="JavaScript" src="/js/dialogo.js"></script>
 <script charset="UTF-8"  language="JavaScript" src="/js/jan.js"></script>
 <script charset="UTF-8"  language="JavaScript" src="covid.js"></script>
-</head>
 
 <style>
 
@@ -24,7 +23,7 @@ INPUT,SELECT {
 }
 
 table tr:nth-child(2n) {
-	background-color:#BFDFEF;
+	xbackground-color:#BFDFEF;
 }
 
 table tr:first-child th {
@@ -70,7 +69,10 @@ TABLE.graphBar {
 }
 
 DIV.covidCtrl {
-  position: fixed;
+  xposition: fixed;
+  xposition: absolute;
+  margin-bottom:5px;
+  float: right;
   padding: 10px;
   background-color:darkred;
   top: 0;
@@ -95,8 +97,10 @@ svg {
 }
 
 </style>
+</head>
 
 <script>
+var Dev = (window.location+'').indexOf('://intranet')!=-1;
 new covid('dstCovid');
 </script>
 
