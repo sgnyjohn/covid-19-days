@@ -10,6 +10,62 @@ Copyright (c) 2020 Signey John
 
 25/março/2020 14:59:59
 
+
+dados	
+ 	https://ourworldindata.org/coronavirus-source-data
+	https://ourworldindata.org/coronavirus
+
+oms	
+	https://www.who.int/emergencies/diseases/novel-coronavirus-2019/situation-reports/
+
+europa
+	https://www.ecdc.europa.eu/en/publications-data/download-todays-data-geographic-distribution-covid-19-cases-worldwide
+	https://opendata.ecdc.europa.eu/covid19/casedistribution/csv
+
+brasil
+	https://www.saude.gov.br/boletins-epidemiologicos
+	https://covid.saude.gov.br/
+	https://mobileapps.saude.gov.br/esus-vepi/files/unAFkcaNDeXajurGB7LChj8SgQYS2ptm/dfe64e164c58c05c77afdd5ecbe8c689_Download_COVID19_20200413.csv
+brasil csv	
+	blob:https://covid.saude.gov.br/30a1d296-d6e2-49a5-8c28-daf12561f595
+ 
+rs	
+ 	https://saude.rs.gov.br/boletins-e-informes
+
+fiocruz	
+ 	http://info.gripe.fiocruz.br/
+	https://agencia.fiocruz.br/sites/agencia.fiocruz.br/files/u91/boletim_infogripe_se202014.pdf
+	https://bigdata-covid19.icict.fiocruz.br/
+	https://rfsaldanha.shinyapps.io/monitoracovid19/
+
+Johns Hopkins CSSE	
+	https://github.com/CSSEGISandData/COVID-19/tree/master/csse_covid_19_data/csse_covid_19_daily_reports
+
+covid19br	
+	https://github.com/covid19br/covid19br.github.io/tree/master/dados
+	https://covid19br.github.io/fontes.html
+
+worldometers	
+	https://www.worldometers.info/coronavirus/#countries
+
+registro civil	
+	https://transparencia.registrocivil.org.br/especial-covid
+	https://transparencia.registrocivil.org.br/api/covid?data_type=data_ocorrido&search=death-respiratory&state=RS&start_date=2020-01-01&end_date=2020-04-07&causa=pneumonia
+	https://transparencia.registrocivil.org.br/api/covid?data_type=data_ocorrido&search=death-respiratory&state=all&start_date=2020-01-01&end_date=2020-04-07&causa=pneumonia
+
+dev fiocruz	
+	https://a.basemaps.cartocdn.com/rastertiles/voyager/5/20/16.png
+	https://www.shinyapps.io/
+	https://github.com/rstudio
+
+pe seplag mapas	
+	https://dados.seplag.pe.gov.br/apps/corona.html#mapas
+
+yandex
+	https://yandex.ru/web-maps/covid19
+
+ 
+
 */
 
 /* toDo
@@ -34,17 +90,19 @@ function covid(Id) {
 	var div = 1000000;
 	var casas = 100; 
 	var pd = new pedido();pd.updUrlJ = true;
-	var opTipo = pd.getJ('opTipo','cases');
+	var opTipo = pd.getJ('opTipo','per million inhabitants');
 	var cmp = 'new_cases,new_deaths,total_cases,total_deaths'.split(',');
-	var Pais = pd.getJ('Pais','Brazil');
+	var Pais = pd.getJ('Pais','*BR*');
 	var dti='999',dtf; //data maximo e minimo dos dados
 	var dt; //data max do país
+	//ORDEM PADRÃO... era 6 e 4 -> 7 e 6 -- md new deat+tot cases -> md new deat+md new case
 	var fs = function(a,b) {
-			return fSort(strZero(a[6]*1000,8)+strZero(a[4]*1000,8),strZero(b[6]*1000,8)+strZero(b[4]*1000,8),true);
+			return fSort(strZero(a[7]*1000,8)+strZero(a[6]*1000,8),strZero(b[7]*1000,8)+strZero(b[6]*1000,8),true);
 		};
 	var popMinV = [20000,50000,100000,200000,500000,1000000,2000000,5000000];
 	var popMin = pd.getNum('popMin',5000000);
 	var dMd = pd.get('dMd',7);
+	var vMd1 = 'average_'+dMd+'d_new_cases';//'average_5d_new_deaths'
 	var vMd = 'average_'+dMd+'d_new_deaths';//'average_5d_new_deaths'
 	var days = [
 		['days+100c','days(total_cases>100)'
@@ -443,14 +501,18 @@ function covid(Id) {
 		//linhas
 		var tr = tb.getElementsByTagName('tr');
 		for (var c=0;c<tr.length;c++) {
-			var p = tr[c].childNodes.item(1).innerHTML;
-			tr[c].childNodes.item(1).setAttribute('title'
-				,format(bdC.getNum('Population','xx',''+bdC.idx[p]),0)
-					+' hab. ('+c+'º)'
-			);
-			if (p==Pais) {
-				tr[c].className = 'B';
-				//break;
+			try {
+				var p = tr[c].childNodes.item(1).innerHTML;
+				tr[c].childNodes.item(1).setAttribute('title'
+					,format(bdC.getNum('Population','xx',''+bdC.idx[p]),0)
+						+' hab. ('+c+'º)'
+				);
+				if (p==Pais) {
+					tr[c].className = 'B';
+					//break;
+				}
+			} catch (e) {
+				//erro, dados corrompidos ?
 			}
 		}
 		return tb;
@@ -462,7 +524,8 @@ function covid(Id) {
 		bd.top();
 		while (bd.next()) {
 			if (bd.get(vr)==day && 
-				( bd.get('location')!='World' && (bd.get('location').charAt(0)!='*' || pais.charAt(0)=='*') )) {
+				( bd.get('location')!='World' && bd.get('location').charAt(0)!='*' )) {
+				//( bd.get('location')!='World' && (bd.get('location').charAt(0)!='*' || pais.charAt(0)=='*') )) {
 				vc[vc.length] = bd.getVetor();
 			}
 		}
@@ -514,11 +577,11 @@ function covid(Id) {
 
 		// dias media 
 		var rr='';
-		feval(13,function(v){
+		feval(14,function(v){
 			rr += '<option'+(dMd==v+1?' selected':'')+'>'+(v+1);
 		});
 		domObj({tag:'select',name:'dMd',style:'font-size:70%;max-width:40px;'
-			,'':rr+'<option>21<option>28<option value=-5>5 [n-2 .. n+2]'
+			,'':rr+'<option>21<option>28<option'+(dMd==-5?' selected':'')+' value=-5>5 [n-2 .. n+2]'
 			,title:'days to calculate the moving average'
 			,ev_change:click
 		,targ:dsC});
@@ -534,7 +597,7 @@ function covid(Id) {
 			,targ:ds});
 
 			//add tab
-			tb = new tabs({dst:domObj({tag:'div',targ:ds}),ped:pd});
+			tb = new tabs({dst:domObj({tag:'div',targ:ds}),ped:pd,tab:pd.getJ('tabs','7')});
 
 			//projeto
 			var u = 'https://github.com/sgnyjohn/covid-19-days';
@@ -651,21 +714,48 @@ function covid(Id) {
 		}
 
 		//monta e mostra grafico país
-		var vg = [];
-		var vv = 7;//days[0][0];
+		var vg = [],vg1 = [],vg2 = [];
+		var vv = 8;//days[0][0];
 		aeval(vp,function(x){
 			if (x[vv]>0) {
-				vg[vg.length] = [ strToDate(x[0]).getDayStr3()+'\n\n'+x[0]+
-					+'\n'+x[vv]+'º day', 1*x[6] 
-				];
+				var p = vg.length;
+				vg[p] = [ x[0]+'\n'+strToDate(x[0]).getDayStr3()+' '+x[vv]+'º day', 1*x[7] ];
+				vg1[p] = [ vg[p][0], 1*x[6] ];
+				vg2[p] = [ vg[p][0], 1*x[6], 20*x[7] ];
+				
 			}
 		});
 		//date	location	new_cases	new_deaths	total_cases	total_deaths	
-		//lert('vv='+vv+' vg='+vg);
-		vg.sort(function(a,b){return fSort(1*a[0],1*b[0]);});
+		//lert(' vg='+vg2);
+		var d = opTipo.indexOf('cases')!=-1?0:2;
+		var gr = new graphLine({
+			scales:false
+			//,title:'meu gráfico dsf'
+			,data:vg2
+			,label:['data','casos','mortes']
+			,color:['blue','red']
+			,title:['covid-19 - '+Pais
+				,'<tspan style="fill:red;">'+cmp[1]+' (20x)</tspan>'
+					+' X <tspan style="fill:blue;">'+cmp[0]+'</tspan>'
+					+' - '+opTipo
+				,'until: '+dt+' inhab.: '+format(pop,0)
+			]
+			,labelData: [''
+				,function(vd){return 'date: <b>'+vd[0]+'</b><br><br>'+cmp[0]+': <b>'+format(vd[1],d)+'</b>';}
+				,function(vd){return 'date: <b>'+vd[0]+'</b><br><br>'+cmp[1]+': <b>'+format(vd[2]/20,d)+'</b>';}
+			]
+		});	
+			
 		tb.addTop({label:'Graph',obj:[
-			domObj({tag:'h2','':tPais+' - '+vMd+' - ('+opTipo+')'})
-			,domObj({tag:'div','':(new graphBar(vg,{label:false})).getHtml()})
+			//domObj({tag:'h2','':tPais+' - ('+opTipo+')'})
+			domObj({tag:'p','':'&nbsp;'})
+			,gr.toDom()
+			//,domObj({tag:'h3','':vMd1})
+			//,domObj({tag:'div','':(new graphLine(vg,{min:0,label:false,scalesx:true,titles:'teste'})).toHtml()})
+			//,domObj({tag:'div','':(new graphBar(vg1,{label:false})).getHtml()})
+			// se perde ,(new graphBar(vg,{label:false,scales:true,min:5})).toDom()
+			//,domObj({tag:'h3','':vMd})
+			//,domObj({tag:'div','':(new graphBar(vg,{label:false})).getHtml()})
 		]});
 
 		//dados país
@@ -726,7 +816,7 @@ function covid(Id) {
 		});
 
 		var pop = bdC.getNum('Population','xx',''+bdC.idx[Pais]);
-		var tPais = Pais+' - '+format(pop,0)+' hab.';
+		var tPais = Pais+' - '+format(pop,0)+' inhab.';
 		
 		//mostra data
 		domObj({tag:'h1',style:'margin:0;color:red;'
@@ -953,7 +1043,7 @@ function covid(Id) {
 		var t = new total(2);
 		var tc = {};
 		br.top();
-		var mua='?',cma='?',popa;
+		var mua='?',cma='?',popa,vtp={};
 		try {
 		while (br.next()) {
 			//padroniza data
@@ -995,8 +1085,27 @@ function covid(Id) {
 				//tot br
 				t.set([uf,dt,ca,oa]);
 				if ( !tc[uf] && pop>0 ) tc[uf] = pop;
-			} else if ( ( cm!='' && pop<popMin ) || uf=='') {
-				// dados municipio ou brasil
+			} else if ( cm!='' && (pop<popMin||isNaN(pop)) ) {
+				// dados municipio menores, por intervalos
+				uf = '?';
+				var ii=0;
+				for (var i=0;i<popMinV.length;i++) {
+					if (pop<popMinV[i]) {
+						uf = format(ii,0)+' a '+format(popMinV[i],0)+' inhab.';
+						break
+					}
+					ii = popMinV[i];
+				}
+				t.inc([uf,dt,ca,oa]);
+				//soma pop
+				if (pop>0 && !vtp[uf+mu]) {
+					vtp[uf+mu] = true;
+					if (!tc[uf]) {
+						tc[uf] = 0;
+					}
+					tc[uf] += pop;
+				}
+			} else if (uf=='') {
 			} else { //dados ufs
 				if (!vazio(mu)) uf += '*'+mu+'*'+cm;
 				t.set([uf,dt,ca,oa]);
@@ -1095,7 +1204,7 @@ function covid(Id) {
 			return format(rg[cmp]*1,0);
 		}		
 		bdPop.showField = function(rg,cmp) {
-			if (cmp<2 || cmp>6 ) {
+			if (cmp<2 || cmp>7 ) {
 				return rg[cmp];
 			}
 			return format(rg[cmp]*1,2);
@@ -1136,25 +1245,34 @@ function covid(Id) {
 
 			//média [ 7 dias n ... n-6 ]
 			if (dMd!=-5) {
-				tn=0;
-				md=0;
-				for (var i=0;i<dMd;i++) {
-					if (bd.get('location','?',-i)==lo) {
-						tn++;
-						md+=bd.getNum('new_deaths',0,-i)
-					};
+				var ff = function(vMd,vr) {
+					var tn=0;
+					var md=0;
+					for (var i=0;i<dMd;i++) {
+						if (bd.get('location','?',-i)==lo) {
+							tn++;
+							md+=bd.getNum(vr,0,-i)
+						};
+					}
+					bd.set(vMd,Math.floor(md/tn*tp+0.5)/tp);				
 				}
-				bd.set(vMd,Math.floor(md/tn*tp+0.5)/tp);				
+				ff(vMd1,'new_cases');
+				ff(vMd,'new_deaths');
+				
 			} else if (true) {
-				//média 5 dias 2 antes e 2 depois
-				tn=0;
-				md=0;
-				if (bd.get('location','?',-2)==lo) {tn++;md+=bd.get('new_deaths',0,-2)*1};
-				if (bd.get('location','?',-1)==lo) {tn++;md+=bd.get('new_deaths',0,-1)*1};
-				tn++;md+=bd.get('new_deaths',0)*1;
-				if (bd.get('location','?', 1)==lo) {tn++;md+=bd.get('new_deaths',0, 1)*1};
-				if (bd.get('location','?', 2)==lo) {tn++;md+=bd.get('new_deaths',0, 2)*1};
-				bd.set(vMd,Math.floor(md/tn*tp+0.5)/tp);				
+				var ff = function(vMd,vr) {
+					//média 5 dias 2 antes e 2 depois
+					var tn=0;
+					var md=0;
+					if (bd.get('location','?',-2)==lo) {tn++;md+=bd.get(vr,0,-2)*1};
+					if (bd.get('location','?',-1)==lo) {tn++;md+=bd.get(vr,0,-1)*1};
+					tn++;md+=bd.get(vr,0)*1;
+					if (bd.get('location','?', 1)==lo) {tn++;md+=bd.get(vr,0, 1)*1};
+					if (bd.get('location','?', 2)==lo) {tn++;md+=bd.get(vr,0, 2)*1};
+					bd.set(vMd,Math.floor(md/tn*tp+0.5)/tp);
+				}
+				ff(vMd1,'new_cases');
+				ff(vMd,'new_deaths');
 				
 			} else {
 				//média ultimos 4 dias  new_deaths
