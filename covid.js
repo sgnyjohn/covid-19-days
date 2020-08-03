@@ -125,6 +125,7 @@ function covid(Id) {
 	var tb;
 	var vDia;
 	var rn;
+	var vPais = [];
 	setTimeout(init,1000);
 	//***************************
 	// log, debug
@@ -441,14 +442,19 @@ function covid(Id) {
 		}
 	}
 	//***************************
+	function pais(n) {
+		Pais = n;
+		pd.putJ('Pais',Pais);
+		//ds.innerHTML = '';
+		mostra();
+	}
+	//***************************
 	function click(ev) {
 		var o = targetEvent(ev);
 		//lert('o='+o.tagName+' '+o);
 		if (o.name=='Pais') {
-			Pais = o.value;
-			pd.putJ('Pais',Pais);
-			//ds.innerHTML = '';
-			mostra();
+			//selecionou country
+			pais(o.value);
 			return;
 		} else if (o.name=='popMin') {
 			pd.putNum('popMin',o.value);
@@ -472,6 +478,7 @@ function covid(Id) {
 			mostra();
 			return;
 		} else if (o.tagName == 'TD') {
+			//lert('clicou nome país');
 			p = o.innerHTML;
 			//lert('po='+p);
 		} else if (o.tagName != 'TR') {
@@ -482,10 +489,16 @@ function covid(Id) {
 		}
 		//bjNav(o);alert(2);
 		if (!vazio(bdC.idx[p])) {
-			Pais = p;
-			pd.putJ('Pais',Pais);
-			//ds.innerHTML = '';
-			mostra();
+			//click country name
+			//select posiciona
+			var v = document.querySelectorAll('select')[0].querySelectorAll('option');
+			for (var i=0;i<v.length;i++) {
+				var x = v[i];
+				if (x.innerHTML==p) {
+					x.selected = true;
+				}
+			}
+			pais(p);
 		} else {
 			//lert('desconhecido ('+p+')');
 		}
@@ -717,13 +730,14 @@ function covid(Id) {
 		var vg = [],vg1 = [],vg2 = [];
 		var vv = 8;//days[0][0];
 		aeval(vp,function(x){
-			if (x[vv]>0) {
-				var p = vg.length;
-				vg[p] = [ x[0]+'\n'+strToDate(x[0]).getDayStr3()+' '+x[vv]+'º day', 1*x[7] ];
-				vg1[p] = [ vg[p][0], 1*x[6] ];
-				vg2[p] = [ vg[p][0], 1*x[6], 20*x[7] ];
+			//if (x[vv]>0) {
+				//var p = ;
+				var lb = '<b>'+strToDate(x[0]).getDayStr3()+'</b> '+x[0]+'<br><b>'+x[vv]+'</b>º day'
+				//vg[p] = [ x[0]+'\n'+strToDate(x[0]).getDayStr3()+' '+x[vv]+'º day', 1*x[7] ];
+				//vg1[p] = [ vg[p][0], 1*x[6] ];
+				vg2[vg2.length] = [ lb, 1*x[6], 20*x[7] ];
 				
-			}
+			//}
 		});
 		//date	location	new_cases	new_deaths	total_cases	total_deaths	
 		//lert(' vg='+vg2);
@@ -737,14 +751,19 @@ function covid(Id) {
 			,title:['covid-19 - '+Pais
 				,'<tspan style="fill:red;">'+cmp[1]+' (20x)</tspan>'
 					+' X <tspan style="fill:blue;">'+cmp[0]+'</tspan>'
-					+' - '+opTipo
+					+' - averange '+dMd+' days'
 				,'until: '+dt+' inhab.: '+format(pop,0)
 			]
 			,labelData: [''
-				,function(vd){return 'date: <b>'+vd[0]+'</b><br><br>'+cmp[0]+': <b>'+format(vd[1],d)+'</b>';}
-				,function(vd){return 'date: <b>'+vd[0]+'</b><br><br>'+cmp[1]+': <b>'+format(vd[2]/20,d)+'</b>';}
+				,function(vd){return vd[0]+'<br><br>'+cmp[0]+': <b>'+format(vd[1],d)+'</b>';}
+				,function(vd){return vd[0]+'<br><br>'+cmp[1]+': <b>'+format(vd[2]/20,d)+'</b>';}
 			]
 		});	
+
+		if (vg2.length==0) {
+			alert('vp.l='+vp.length+' vp='+vp);
+		}
+
 			
 		tb.addTop({label:'Graph',obj:[
 			//domObj({tag:'h2','':tPais+' - ('+opTipo+')'})
@@ -991,11 +1010,20 @@ function covid(Id) {
 		//carrega dados oms / ourworldindata.org
 		//lert('tx='+tx);
 		//date,location,new_cases,new_deaths,total_cases,total_deaths+days_c50+days_Nzero
+		var v = 'date,location,new_cases,new_deaths,total_cases,total_deaths'.split(',');
+		var bdOms1 = new bancoDados();
+		bdOms1.dlCol = ',';
+		bdOms1.setTxt(tx);
+		//CRIA BD
 		bdOms = new bancoDados();
-		bdOms.dlCol = ',';
 		bdOms.mult = 1; 
-		bdOms.setTxt(tx);
-		
+		bdOms1.top();
+		while (bdOms1.next()) {
+			bdOms.addReg();
+			aeval(v,function(v) {
+				bdOms.set(v,bdOms1.get(v));
+			});
+		}
 	}
 	//***************************
 	// exclui dias duplos duplos
