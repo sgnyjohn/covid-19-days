@@ -97,7 +97,7 @@ function covid(Id) {
 	var dt; //data max do país
 	//ORDEM PADRÃO... era 6 e 4 -> 7 e 6 -- md new deat+tot cases -> md new deat+md new case
 	var fs = function(a,b) {
-			return fSort(strZero(a[7]*1000,8)+strZero(a[6]*1000,8),strZero(b[7]*1000,8)+strZero(b[6]*1000,8),true);
+			return fSort(strZero(a[10]*1000,8)+strZero(a[6]*1000,8),strZero(b[10]*1000,8)+strZero(b[6]*1000,8),true);
 		};
 	var popMinV = [20000,50000,100000,200000,500000,1000000,2000000,5000000];
 	var popMin = pd.getNum('popMin',5000000);
@@ -1232,7 +1232,7 @@ function covid(Id) {
 			return format(rg[cmp]*1,0);
 		}		
 		bdPop.showField = function(rg,cmp) {
-			if (cmp<2 || cmp>7 ) {
+			if ( (cmp<2 || cmp>7) && cmp!=10 ) {
 				return rg[cmp];
 			}
 			return format(rg[cmp]*1,2);
@@ -1325,6 +1325,11 @@ function covid(Id) {
 				var va = (ig?bd.get(days[i][0],0,-1)*1:0); //valor anterior
 				bd.set(days[i][0],(days[i][2])(bd,va));
 			}
+			
+			//md deaths / days
+			bd.set("t.deaths /days+10md"+dMd,
+				bd.getNum("days+10md"+dMd)==0?0:Math.floor(bd.getNum("total_deaths")/bd.getNum("days+10md"+dMd)*100+0.5)/100
+			);
 		
 			
 		}
