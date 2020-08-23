@@ -735,7 +735,7 @@ function covid(Id) {
 				var lb = '<b>'+strToDate(x[0]).getDayStr3()+'</b> '+x[0]+'<br><b>'+x[vv]+'</b>º day'
 				//vg[p] = [ x[0]+'\n'+strToDate(x[0]).getDayStr3()+' '+x[vv]+'º day', 1*x[7] ];
 				//vg1[p] = [ vg[p][0], 1*x[6] ];
-				vg2[vg2.length] = [ lb, 1*x[6], 20*x[7] ];
+				vg2[vg2.length] = [ lb, 1*x[6], 20*x[7], 20*x[10] ];
 				
 			//}
 		});
@@ -746,17 +746,19 @@ function covid(Id) {
 			scales:false
 			//,title:'meu gráfico dsf'
 			,data:vg2
-			,label:['data','casos','mortes']
-			,color:['blue','red']
+			,label:['data','casos','mortes','mortes/dias']
+			,color:['blue','red','#ff00ff']
 			,title:['covid-19 - '+Pais
-				,'<tspan style="fill:red;">'+cmp[1]+' (20x)</tspan>'
-					+' X <tspan style="fill:blue;">'+cmp[0]+'</tspan>'
+				,'<tspan style="fill:red;">'+cmp[1]+'</tspan>'
+					+' X <tspan style="fill:#ff00ff;">'+cmp[3]+'/days</tspan>'
+					+' X <tspan style="fill:blue;">'+cmp[0]+' (1/20)</tspan>'
 					+' - averange '+dMd+' days'
 				,'until: '+dt+' inhab.: '+format(pop,0)
 			]
 			,labelData: [''
 				,function(vd){return vd[0]+'<br><br>'+cmp[0]+': <b>'+format(vd[1],d)+'</b>';}
 				,function(vd){return vd[0]+'<br><br>'+cmp[1]+': <b>'+format(vd[2]/20,d)+'</b>';}
+				,function(vd){return vd[0]+'<br><br>'+cmp[3]+'/days: <b>'+format(vd[3]/20,d)+'</b>';}
 			]
 		});	
 
