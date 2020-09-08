@@ -92,7 +92,7 @@ function covid(Id) {
 	var pd = new pedido();pd.updUrlJ = true;
 	var opTipo = pd.getJ('opTipo','per million inhabitants');
 	var cmp = 'new_cases,new_deaths,total_cases,total_deaths'.split(',');
-	var Pais = pd.getJ('Pais','*BR*');
+	var Pais = pd.getJ('Pais','Brazil');
 	var dti='999',dtf; //data maximo e minimo dos dados
 	var dt; //data max do país
 	//ORDEM PADRÃO... era 6 e 4 -> 7 e 6 -- md new deat+tot cases -> md new deat+md new case
@@ -104,11 +104,12 @@ function covid(Id) {
 	var dMd = pd.get('dMd',7);
 	var vMd1 = 'average_'+dMd+'d_new_cases';//'average_5d_new_deaths'
 	var vMd = 'average_'+dMd+'d_new_deaths';//'average_5d_new_deaths'
+	var daysMd=10;
 	var days = [
 		['days+100c','days(total_cases>100)'
 			,function(bd,va) {return bd.get('total_cases')*bd.mult>100||va>0 ? va+1 : 0 } ]
-		,['days+10md'+dMd,'days('+vMd+'>10)'
-			,function(bd,va) {return bd.get(vMd)*bd.mult>10||va>0 ? va+1 : 0 } ]
+		,['days+'+daysMd+'md'+dMd,'days('+vMd+'>'+daysMd+')'
+			,function(bd,va) {return bd.get(vMd)*bd.mult>daysMd||va>0 ? va+1 : 0 } ]
 		//,['days+20d','day (total_deaths > 20)'
 		//	,function(bd) {return bd.get('total_deaths')*bd.mult>20?bd.get('days+20d',0,-1)*1+1:0} ]
 	];
@@ -442,6 +443,23 @@ function covid(Id) {
 		}
 	}
 	//***************************
+	var estatWWWurl;
+	function estatWWW() {
+		var s = ''+window.location;
+		if (s == estatWWWurl) return;
+		estatWWWurl = s;
+		s = '?dt='+ms()+'&Pais='+Pais+'&opTipo='+opTipo+'&tabs='+pd.getJ('tabs','7')
+			+'&popMin='+popMin+'&dMd='+dMd
+		;
+		/*var p = s.indexOf('?');
+		p = p==-1?s.indexOf('#'):p;
+		s = p==-1?'':s.substring(p);*/
+		(new carregaUrl()).abre('estat.html'+s,function(a,b,tx) {
+			var v = cookieGet('clicks');
+			cookiePut('clicks',(Number.isInteger(v)?v:0)+1);
+		});
+	}
+	//***************************
 	function pais(n) {
 		Pais = n;
 		pd.putJ('Pais',Pais);
@@ -602,6 +620,7 @@ function covid(Id) {
 	}
 	//***************************
 	function mostra() {
+		estatWWW();
 		if (tb==null) {
 			ds.innerHTML = '';
 			//mostra data
@@ -691,7 +710,7 @@ function covid(Id) {
 		// monta resumo pais, mundo e dias
 		// date 0,location 1,new_cases 2,new_deaths 3,total_cases 4,total_deaths 5+days_c50 6+days_Nzero 7
 		bd.top();
-		var vp=[],vr=[],ods = new total(2);
+		var vp=[],vr=[],ods = new total(2),totD=-1;
 		vDia = [];
 		aeval(days,function(x){x[4]=[];});
 		while (bd.next()) {
@@ -703,6 +722,7 @@ function covid(Id) {
 			if (lo==Pais && nc+nd
 					+bd.getNum('total_cases',0)+bd.getNum('total_deaths',0)>0 ) {
 				vp[vp.length] = bd.getVetor();
+				totD = bd.getNum('total_deaths',0);
 			}
 			//dados mundo
 			if (bd.get('date')==dt && bd.getNum('total_cases',0)>-1) {
@@ -728,7 +748,7 @@ function covid(Id) {
 
 		//monta e mostra grafico país
 		var vg = [],vg1 = [],vg2 = [];
-		var vv = 8;//days[0][0];
+		var vv = 9;//days[0][0];
 		aeval(vp,function(x){
 			//if (x[vv]>0) {
 				//var p = ;
@@ -753,7 +773,7 @@ function covid(Id) {
 					+' X <tspan style="fill:#ff00ff;">'+cmp[3]+'/days</tspan>'
 					+' X <tspan style="fill:blue;">'+cmp[0]+' (1/20)</tspan>'
 					+' - averange '+dMd+' days'
-				,'until: '+dt+' inhab.: '+format(pop,0)
+				,'until: '+dt+' inhab.: '+format(pop,0)+' '+cmp[3]+': '+format(totD,0)
 			]
 			,labelData: [''
 				,function(vd){return vd[0]+'<br><br>'+cmp[0]+': <b>'+format(vd[1],d)+'</b>';}
@@ -975,6 +995,31 @@ function covid(Id) {
 	}
 	//***************************
 	function init() {
+		/*pd.putJk = pd.putJ;
+		pd.putJ = function(n,v) {
+			pd.putJk(n,v);
+			estatWWW();
+		}
+		*/
+		window.addEventListener( "hashchange", function( event ) {
+			//lert('alterou');
+			estatWWW();
+		});
+		
+		/*
+		var obs = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (eu.oldHref != document.location.href) {
+                    eu.oldHref = document.location.href;
+                    estatWWW();
+                }
+            });
+        });
+		obs.observe(document.querySelector("body")
+			, {childList: true,subtree: true}
+		);
+		*/
+		
 		//inicio
 		ds = browse.getId(id);
 		if (!ds) { 
@@ -1329,8 +1374,8 @@ function covid(Id) {
 			}
 			
 			//md deaths / days
-			bd.set("t.deaths /days+10md"+dMd,
-				bd.getNum("days+10md"+dMd)==0?0:Math.floor(bd.getNum("total_deaths")/bd.getNum("days+10md"+dMd)*100+0.5)/100
+			bd.set("t.deaths /days+"+daysMd+"md"+dMd,
+				bd.getNum("days+"+daysMd+"md"+dMd)==0?0:Math.floor(bd.getNum("total_deaths")/bd.getNum("days+"+daysMd+"md"+dMd)*100+0.5)/100
 			);
 		
 			
