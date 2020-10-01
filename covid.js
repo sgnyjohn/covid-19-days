@@ -79,7 +79,8 @@ yandex
 
 
 //*******************************
-function covid(Id) { 
+function covid(Id) {
+	var eu = this; 
 	var id = Id;
 	var doc = document;
 	var ds,dsC;
@@ -101,7 +102,7 @@ function covid(Id) {
 		};
 	var popMinV = [20000,50000,100000,200000,500000,1000000,2000000,5000000];
 	var popMin = pd.getNum('popMin',5000000);
-	var dMd = pd.get('dMd',7);
+	var dMd = pd.get('dMd',21);
 	var vMd1 = 'average_'+dMd+'d_new_cases';//'average_5d_new_deaths'
 	var vMd = 'average_'+dMd+'d_new_deaths';//'average_5d_new_deaths'
 	var daysMd=10;
@@ -529,18 +530,24 @@ function covid(Id) {
 		tb.addEventListener('click',click,true);
 		//sort
 		//tabelaSort(tb);//lert('sort'+tb);
-		//linhas
+		//negrita linhas país & colore tipo ugeo
 		var tr = tb.getElementsByTagName('tr');
-		for (var c=0;c<tr.length;c++) {
+		for (var c=1;c<tr.length;c++) {
 			try {
-				var p = tr[c].childNodes.item(1).innerHTML;
-				tr[c].childNodes.item(1).setAttribute('title'
+				var cp = tr[c].childNodes.item(1);
+				var p = cp.innerHTML;
+				cp.setAttribute('title'
 					,format(bdC.getNum('Population','xx',''+bdC.idx[p]),0)
 						+' hab. ('+c+'º)'
 				);
+				//negrita linha país
 				if (p==Pais) {
 					tr[c].className = 'B';
 					//break;
+				}
+				if (p.charAt(0)=='*') {
+					cp.style.cssText += 'background-color:#CFEF8F';//#CFEFFF
+					//cp.innerHTML = trimm(troca(p,'*',' '));
 				}
 			} catch (e) {
 				//erro, dados corrompidos ?
@@ -612,7 +619,9 @@ function covid(Id) {
 			rr += '<option'+(dMd==v+1?' selected':'')+'>'+(v+1);
 		});
 		domObj({tag:'select',name:'dMd',style:'font-size:70%;max-width:40px;'
-			,'':rr+'<option>21<option>28<option'+(dMd==-5?' selected':'')+' value=-5>5 [n-2 .. n+2]'
+			,'':rr+'<option'+(dMd==21?' selected':'')+'>21'
+				+'<option'+(dMd==28?' selected':'')+'>28'
+				+'<option'+(dMd==-5?' selected':'')+' value=-5>5 [n-2 .. n+2]'
 			,title:'days to calculate the moving average'
 			,ev_change:click
 		,targ:dsC});
@@ -769,9 +778,9 @@ function covid(Id) {
 			,label:['data','casos','mortes','mortes/dias']
 			,color:['blue','red','#ff00ff']
 			,title:['covid-19 - '+Pais
-				,'<tspan style="fill:red;">'+cmp[1]+'</tspan>'
-					+' X <tspan style="fill:#ff00ff;">'+cmp[3]+'/days</tspan>'
-					+' X <tspan style="fill:blue;">'+cmp[0]+' (1/20)</tspan>'
+				,'<tspan style="fill:red;">'+cmp[1]+' - '+format(vg2[vg2.length-1][2]/20,2)+'</tspan>'
+					+' X <tspan style="fill:#ff00ff;">'+cmp[3]+'/days - '+format(vg2[vg2.length-1][3]/20,2)+'</tspan>'
+					+' X <tspan style="fill:blue;">'+cmp[0]+' (1/20) - '+format(vg2[vg2.length-1][1],2)+'</tspan>'
 					+' - averange '+dMd+' days'
 				,'until: '+dt+' inhab.: '+format(pop,0)+' '+cmp[3]+': '+format(totD,0)
 			]
@@ -1034,10 +1043,15 @@ function covid(Id) {
 		
 		rn = new running(ds,true);
 		
+		var x='dados/last.csv';
+		if ((window.location+'').indexOf('dv.john')!=-1) {
+			x='dados/full_data.csv';
+		}
 		//carrega dados
-		new loader({timeout:30
+		eu.ti = ms();
+		new loader({timeout:60
 			,0:{url:'dados/countries.csv?k1'+format(ms()/(1000*60*10),0),callback:carregaGeo}
-			,1:{url:'dados/last.csv?dt'+format(ms()/(1000*60*10),0),callback:carregaOms}
+			,1:{url:x+'?dt'+format(ms()/(1000*60*10),0),callback:carregaOms}
 			,2:{url:'dados/lastbr.csv?dt'+format(ms()/(1000*60*10),0),callback:carregaBR}
 			,callback:carregaFim
 		});
@@ -1093,12 +1107,15 @@ function covid(Id) {
 	}
 	//***************************
 	function carregaBR(tx) {
+		//return;
 		// blob:https://covid.saude.gov.br/bfe25a06-731e-4063-97aa-648840ab26ef
 		// blob:https://covid.saude.gov.br/a615cf8c-346e-42f2-b6ea-0449f41a26f5
 		//lert('br='+tx.length);
 		br = new bancoDados();
 		br.dlCol = '\t';
-		br.setTxt(tx);
+		br.dlCol = ';';
+		br.setTxt(tx);//,function(v){return v[1]=='RS'});
+		//return;
 		
 		//bug 2
 		//carregaBRbugRegDuplos(br);
@@ -1182,7 +1199,7 @@ function covid(Id) {
 				}
 			} else if (uf=='') {
 			} else { //dados ufs
-				if (!vazio(mu)) uf += '*'+mu+'*'+cm;
+				if (!vazio(mu)) uf += ' '+mu;//+'*'+cm;
 				t.set([uf,dt,ca,oa]);
 				if ( !tc[uf] && pop>0 ) tc[uf] = pop;
 			}
@@ -1205,7 +1222,7 @@ function covid(Id) {
 			bdOms.addReg();
 			var d = dataSql(strToData(v[1]).getTime()+1000*60*60*24);
 			bdOms.set('date',leftAt(d,' ') );
-			bdOms.set('location','*BR*'+v[0]);
+			bdOms.set('location','*BR '+v[0]);
 			bdOms.set('new_cases',v[2]-va1);
 			bdOms.set('new_deaths',v[3]-va2);
 			bdOms.set('total_cases',v[2]);
@@ -1219,13 +1236,14 @@ function covid(Id) {
 		//bd populaçao
 		aeval(tc,function(v,k) {
 			bdC.addReg();
-			bdC.set('Country','*BR*'+k);
+			bdC.set('Country','*BR '+k);
 			bdC.set('Population',v);
 		});
 		
 	}
 	//***************************
-	function carregaFim(ld) {	
+	function carregaFim(ld) {
+		//lert('tempo ='+(ms()-eu.ti));	
 		//lert('br='+ld);
 		//erro load ?
 		if (ld.error) {
