@@ -1136,6 +1136,8 @@ function covid(Id) {
 		var tc = {};
 		br.top();
 		var mua='?',cma='?',popa,vtp={};
+		var caa,oaa,tr1=0,tr2=0;
+		var corr = confirm('fazer correções acumulados "dobrados" ou zerados dos municípios br?');
 		try {
 		while (br.next()) {
 			//padroniza data
@@ -1149,19 +1151,35 @@ function covid(Id) {
 			var pop = br.getNum('populacaoTCU2019');
 			var ca = br.getNum('casosAcumulado');
 			var oa = br.getNum('obitosAcumulado');
+			
+			
 			var cm = br.get('codmun');
-			//REMENDO erro planilha.
+			//REMENDO 1 erro planilha.
 			if (cm!='') {
 				//alert(mu+' mua='+mua+'\n'+cm.substring(0,6)+'=='+cma.substring(0,6));
 				cm = cm.substring(0,6);
 				if (mu==''&&cm==cma) {
 					mu = mua;
 					pop = popa;
+					tr1++;
+				}
+				//REMENDO acumulados muns após apagão de dados 5a12/11/2020 e véspera 1o turno 15/11
+				// foi lançado em 10/11 acumulados muns como novos
+				if (corr && cma==cm) {
+					if (ca>200 && ca-caa>caa*0.9) { ca = ca/2;tr2++;} //se QSE duplicou pega metade
+					if (ca==0 && caa>10) {ca = caa;tr2++}; //se 0 pega anterior
+					if (oa>200 && oa-oaa>oaa*0.9) { oa = oa/2;tr2++;}
+					if (oa==0 && oaa>10) {oa = oaa;tr2++};
 				}
 			}
 			mua = mu;
 			cma = cm;
 			popa = pop;
+			//remendo 2
+			caa = ca;
+			oaa = oa;
+			
+			
 			//lert(br.get('data')+' -> '+dataSql(br.get('data'))+' -> '+dt);
 			if (false&&mu==''&&cm!='') {
 				//eu estava filtrando pelo nome do mun vazio e somando como tot uf dados
@@ -1203,10 +1221,13 @@ function covid(Id) {
 				t.set([uf,dt,ca,oa]);
 				if ( !tc[uf] && pop>0 ) tc[uf] = pop;
 			}
-		}
+		} //fim bd.next
 		} catch (e) {
 			alertDev('erro carregaBr '+e+' '+br.getVetor()+'\n\n'+erro(e));
 		}
+		
+		//if (tr1>0) alert(tr1+' correções feitas relativo identificação dos municipios br');
+		if (tr2>0) alert(tr2+' correções feitas acumulado lançado como novos nos municipios br');
 		
 		var v = t.getVector();
 		v.sort(function(a,b) {return fSortCols(a,b,[0,1])});
