@@ -1,7 +1,5 @@
 #!/bin/bash
 
-cd $(dirname "$0")/dados
-
 bxOms() {
 	ur="https://www.who.int/emergencies/diseases/novel-coronavirus-2019/situation-reports/"
 	ds=/tmp/oms.html
@@ -74,9 +72,18 @@ bxCsv() {
 	fi
 }
 
+alvo=$(dirname "$0")/dados
+if ! test -d $alvo; then
+	echo "directory not exists $alvo"
+	exit 1
+fi
+cd $alvo
 
-bxOms
-bxOurWorldInData
-bxCsv "https://opendata.ecdc.europa.eu/covid19/casedistribution/csv" "eu_"
-
+if [ "$1" == "" ]; then
+	bxOms
+	bxOurWorldInData
+	bxCsv "https://opendata.ecdc.europa.eu/covid19/casedistribution/csv" "eu_"
+else
+	bxOurWorldInData
+fi
 

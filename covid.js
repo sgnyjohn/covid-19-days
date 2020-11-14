@@ -101,7 +101,7 @@ function covid(Id) {
 			return fSort(strZero(a[10]*1000,8)+strZero(a[6]*1000,8),strZero(b[10]*1000,8)+strZero(b[6]*1000,8),true);
 		};
 	var popMinV = [20000,50000,100000,200000,500000,1000000,2000000,5000000];
-	var popMin = pd.getNum('popMin',5000000);
+	var popMin = pd.getNum('popMin',1000000);
 	var dMd = pd.get('dMd',21);
 	var vMd1 = 'average_'+dMd+'d_new_cases';//'average_5d_new_deaths'
 	var vMd = 'average_'+dMd+'d_new_deaths';//'average_5d_new_deaths'
@@ -128,6 +128,7 @@ function covid(Id) {
 	var vDia;
 	var rn;
 	var vPais = [];
+	var filtro; //filtrar bd
 	setTimeout(init,1000);
 	//***************************
 	// log, debug
@@ -1048,13 +1049,36 @@ function covid(Id) {
 			x='dados/full_data.csv';
 		}
 		//carrega dados
+		filtro = trimm(prompt('load database'
+			+'\n'
+			+'\n1 - países'
+			+'\n2 - brasil'
+			+'\noutros = BR uf'
+			,'1'
+		));
 		eu.ti = ms();
-		new loader({timeout:60
-			,0:{url:'dados/countries.csv?k1'+format(ms()/(1000*60*10),0),callback:carregaGeo}
-			,1:{url:x+'?dt'+format(ms()/(1000*60*10),0),callback:carregaOms}
-			,2:{url:'dados/lastbr.csv?dt'+format(ms()/(1000*60*10),0),callback:carregaBR}
-			,callback:carregaFim
-		});
+		var op = {},nop=0;
+		op.timeout = 60;
+		op.callback = carregaFim;
+		if (filtro=='1') {
+			op[nop++] = {url:'dados/countries.csv?k1'+format(ms()/(1000*60*10),0),callback:carregaGeo};
+			op[nop++] = {url:x+'?dt'+format(ms()/(1000*60*10),0),callback:carregaOms};
+		}
+		if (filtro!='1') {
+			bdC = new bancoDados();
+			bdOms = new bancoDados();
+			op[nop++] = {url:'dados/lastbr.csv?dt'+format(ms()/(1000*60*10),0),callback:carregaBR}
+		}
+		if (true) {
+			new loader(op);
+		} else {
+			new loader({timeout:60
+				,0:{url:'dados/countries.csv?k1'+format(ms()/(1000*60*10),0),callback:carregaGeo}
+				,1:{url:x+'?dt'+format(ms()/(1000*60*10),0),callback:carregaOms}
+				,2:{url:'dados/lastbr.csv?dt'+format(ms()/(1000*60*10),0),callback:carregaBR}
+				,callback:carregaFim
+			});
+		}
 	}
 	//***************************
 	function carregaGeo(tx) {
@@ -1137,7 +1161,13 @@ function covid(Id) {
 		br.top();
 		var mua='?',cma='?',popa,vtp={};
 		var caa,oaa,tr1=0,tr2=0;
-		var corr = confirm('fazer correções acumulados "dobrados" ou zerados dos municípios br?');
+		var corr = false;//confirm('fazer correções acumulados "dobrados" ou zerados dos municípios br?');
+		var ecorr=new estat('municipios corrigidos');
+		var fil = false;
+		if (filtro.length>1) {
+			fil = true;
+			filtro = ' '+trimm(filtro.toUpperCase())+' ';
+		}
 		try {
 		while (br.next()) {
 			//padroniza data
@@ -1147,6 +1177,9 @@ function covid(Id) {
 				continue;
 			}
 			var uf = br.get('estado');
+			if (fil && filtro.indexOf(' '+uf+' ')==-1) {
+				continue;
+			}
 			var mu = br.get('municipio');
 			var pop = br.getNum('populacaoTCU2019');
 			var ca = br.getNum('casosAcumulado');
@@ -1166,10 +1199,10 @@ function covid(Id) {
 				//REMENDO acumulados muns após apagão de dados 5a12/11/2020 e véspera 1o turno 15/11
 				// foi lançado em 10/11 acumulados muns como novos
 				if (corr && cma==cm) {
-					if (ca>200 && ca-caa>caa*0.9) { ca = ca/2;tr2++;} //se QSE duplicou pega metade
-					if (ca==0 && caa>10) {ca = caa;tr2++}; //se 0 pega anterior
-					if (oa>200 && oa-oaa>oaa*0.9) { oa = oa/2;tr2++;}
-					if (oa==0 && oaa>10) {oa = oaa;tr2++};
+					if (ca>200 && ca-caa>caa*0.9) { ecorr.inc(uf+' '+mu,1);ca = ca/2;tr2++;} //se QSE duplicou pega metade
+					if (ca==0 && caa>10) {ecorr.inc(uf+' '+mu,1);ca = caa;tr2++}; //se 0 pega anterior
+					if (oa>200 && oa-oaa>oaa*0.9) {ecorr.inc(uf+' '+mu,1);oa = oa/2;tr2++;}
+					if (oa==0 && oaa>10) {ecorr.inc(uf+' '+mu,1);oa = oaa;tr2++};
 				}
 			}
 			mua = mu;
@@ -1227,7 +1260,10 @@ function covid(Id) {
 		}
 		
 		//if (tr1>0) alert(tr1+' correções feitas relativo identificação dos municipios br');
-		if (tr2>0) alert(tr2+' correções feitas acumulado lançado como novos nos municipios br');
+		if (tr2>0) {
+			alert(tr2+' correções feitas acumulado lançado como novos nos municipios br');
+			alert('corrigidos - valores %\n\n'+ecorr.toTxt());
+		}
 		
 		var v = t.getVector();
 		v.sort(function(a,b) {return fSortCols(a,b,[0,1])});
@@ -1278,6 +1314,7 @@ function covid(Id) {
 		bdC.idx = bdC.index('Country',true);
 
 		//tit ?
+		if (filtro=='1') totTag(bdOms);
 		calcMediaDias(bdOms);
 
 		//calcula bd por habitantes
@@ -1304,7 +1341,6 @@ function covid(Id) {
 			});
 		});
 
-		//totTag();
 		calcMediaDias(bdPop,true);
 		
 		//redefine mostrar campo
@@ -1426,23 +1462,26 @@ function covid(Id) {
 		bd.top();
 		while (bd.next()) {
 			aeval(tag,function(e){
-				if (e[1].indexOf('~'+bd.get('location')+'~')!=-1) {
+				var lo = bd.get('location');
+				if (e[1].indexOf('~'+lo+'~')!=-1) {
 					var ch = bd.get('date');
 					var t = e[2][ch];
 					if (!t) {
-						t = Array(0,0,0,0);
+						t = Array(0,0,0,0,0);
 						e[2][ch] = t;
 					}
 					t[0] += bd.get('new_cases',0)*1;
 					t[1] += bd.get('new_deaths',0)*1;
 					t[2] += bd.get('total_cases',0)*1;
 					t[3] += bd.get('total_deaths',0)*1;
+					t[4] += bdC.getNum('Population','xx',''+bdC.idx[lo]);
 				}
 			});
 		}
 		//guarda no bd
 		aeval(tag,function(e) {
 			//lert('e='+e);
+			var pop = 0;
 			aeval(e[2],function(v,dt) {
 				//lert('dt='+dt+' '+e[0]+' '+v);
 				bd.addReg();
@@ -1452,8 +1491,17 @@ function covid(Id) {
 				bd.set('new_deaths',v[1]);
 				bd.set('total_cases',v[2]);
 				bd.set('total_deaths',v[3]);
+				//max população da tag
+				pop = Math.max(pop,v[4]);
 			});
+			//add tot população da tag
+			bdC.addReg();
+			bdC.set('Country','*'+e[0]);
+			bdC.set('Population',pop);
+			
 		});
+		//reindexa bdC
+		bdC.idx = bdC.index('Country',true);
 	}
 
 }
