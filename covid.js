@@ -101,7 +101,7 @@ function covid(Id) {
 			return fSort(strZero(a[10]*1000,8)+strZero(a[6]*1000,8),strZero(b[10]*1000,8)+strZero(b[6]*1000,8),true);
 		};
 	var popMinV = [20000,50000,100000,200000,500000,1000000,2000000,5000000];
-	var popMin = pd.getNum('popMin',1000000);
+	var popMin = pd.getNum('popMin',200000);
 	var dMd = pd.get('dMd',21);
 	var vMd1 = 'average_'+dMd+'d_new_cases';//'average_5d_new_deaths'
 	var vMd = 'average_'+dMd+'d_new_deaths';//'average_5d_new_deaths'
@@ -114,13 +114,19 @@ function covid(Id) {
 		//,['days+20d','day (total_deaths > 20)'
 		//	,function(bd) {return bd.get('total_deaths')*bd.mult>20?bd.get('days+20d',0,-1)*1+1:0} ]
 	];
-	var tag = [['américa do sul','~Argentina~Bolivia~Bouvet Island~Brazil~Chile~Colombia~Ecuador~Falkland Islands~French Guiana~Guyana~Paraguay~Peru~South Georgia~South Sandwich Islands~Suriname~Uruguay~Venezuela~']
+	var tag = [
+		['américa do sul','~Argentina~Bolivia~Bouvet Island~Brazil~Chile~Colombia~Ecuador~Falkland Islands~French Guiana~Guyana~Paraguay~Peru~South Georgia~South Sandwich Islands~Suriname~Uruguay~Venezuela~']
 		,['américa central','~Belize~Costa Rica~El Salvador~Guatemala~Honduras~Nicaragua~Panama~']
 		,['américa do norte','~Anguilla~Antigua and Barbuda~Aruba~The Bahamas~Barbados~Belize~Bermuda~Bonaire~British Virgin Islands~Canada~Cayman Islands~Clipperton Island~Costa Rica~Cuba~Curaçao~Dominica~Dominican Republic~El Salvador~Federal Dependencies of Venezuela~Greenland~Grenada~Guadeloupe~Guatemala~Haiti~Honduras~Jamaica~Martinique~Mexico~Montserrat~Nicaragua~Nueva Esparta~Panama~Puerto Rico~Saba~San Andrés and Providencia~Saint Barthélemy~Saint Kitts and Nevis~Saint Lucia~Saint Martin~Saint Pierre and Miquelon~Saint Vincent and the Grenadines~Sint Eustatius~Sint Maarten~Trinidad and Tobago~Turks and Caicos Islands~United States~United States Virgin Islands~']
 		,['africa','~Algeria~Angola~Benin~Botswana~Burkina Faso~Burundi~Cameroon~Canary Islands~Cape Verde~Central African Republic~Ceuta~Chad~Comoros~Democratic Republic of the Congo~Djibouti~Egypt~Equatorial Guinea~Eritrea~Eswatini~Ethiopia~French Southern and Antarctic Lands~Gabon~Ghana~Guinea~Guinea-Bissau~Ivory Coast~Kenya~Lesotho~Liberia~Libya~Madagascar~Madeira~Malawi~Mali~Mauritania~Mauritius~Mayotte~Melilla~Morocco~Mozambique~Namibia~Niger~Nigeria~Republic of the Congo~Réunion~Rwanda~Saint Helena, Ascension and Tristan da Cunha~São Tomé and Príncipe~Senegal~Seychelles~Sierra Leone~Somalia~South Africa~South Sudan~Sudan~Tanzania~The Gambia~Togo~Tunisia~Uganda~Western Sahara~Zambia~Zimbabwe~']
-		,['asia','Afghanistan~Armenia~Azerbaijan~Bahrain~Bangladesh~Bhutan~Brunei~Cambodia~China~Cyprus~East Timor~Georgia~India~Indonesia~Iran~Iraq~Israel~Japan~Jordan~Kazakhstan~Kuwait~Kyrgyzstan~Laos~Lebanon~Malaysia~Maldives~Mongolia~Myanmar~Nepal~North Korea~Oman~Pakistan~Palestine~Papua New Guinea~Philippines~Qatar~Russia~Saudi Arabia~Singapore~South Korea~Sri Lanka~Syria~Taiwan~Tajikistan~Thailand~Turkey~Turkmenistan~United Arab Emirates~Uzbekistan~Vietnam~Yemen~']
+		,['asia','~Afghanistan~Armenia~Azerbaijan~Bahrain~Bangladesh~Bhutan~Brunei~Cambodia~China~Cyprus~East Timor~Georgia~India~Indonesia~Iran~Iraq~Israel~Japan~Jordan~Kazakhstan~Kuwait~Kyrgyzstan~Laos~Lebanon~Malaysia~Maldives~Mongolia~Myanmar~Nepal~North Korea~Oman~Pakistan~Palestine~Papua New Guinea~Philippines~Qatar~Russia~Saudi Arabia~Singapore~South Korea~Sri Lanka~Syria~Taiwan~Tajikistan~Thailand~Turkey~Turkmenistan~United Arab Emirates~Uzbekistan~Vietnam~Yemen~']
 		,['nato','~Albania~Belgium~Bulgaria~Canada~Croatia~Czechia~Denmark~Estonia~France~Germany~Greece~Hungary~Iceland~Italy~Latvia~Lithuania~Luxembourg~Montenegro~Netherlands~North Macedonia~Norway~Poland~Portugal~Romania~Slovakia~Slovenia~Spain~Turkey~United Kingdom~United States~']
-		,['oecd','Australia~Austria~Belgium~Canada~Chile~Czech Republic~Denmark~Estonia~Finland~France~Germany~Greece~Hungary~Iceland~Ireland~Israel~Italy~Japan~Korea, South~Latvia~Lithuania~Luxembourg~Mexico~Netherlands~New Zealand~Norway~Poland~Portugal~Slovakia~Slovenia~Spain~Sweden~Switzerland~Turkey~United Kingdom~United States~Abkhazia~Artsakh~Northern Cyprus~South Ossetia~']
+		,['oecd','~Australia~Austria~Belgium~Canada~Chile~Czech Republic~Denmark~Estonia~Finland~France~Germany~Greece~Hungary~Iceland~Ireland~Israel~Italy~Japan~Korea, South~Latvia~Lithuania~Luxembourg~Mexico~Netherlands~New Zealand~Norway~Poland~Portugal~Slovakia~Slovenia~Spain~Sweden~Switzerland~Turkey~United Kingdom~United States~Abkhazia~Artsakh~Northern Cyprus~South Ossetia~']
+		,['balkans','~Bulgaria~Serbia~Croatia~Greece~North Macedonia~Albania~Bulgaria~Greece~Slovenia~Romania~Serbia~Bosnia and Herzegovina~Turkey~']
+		,['middle east','~Akrotiri and Dhekelia~Bahrain~Cyprus~Egypt~Iran~Iraq~Israel~Jordan~Kuwait~Lebanon~Oman~Palestine~Qatar~Saudi Arabia~Syria~Turkey~United Arab Emirates~Yemen~']
+		,['oceanian','~Australia~Papua New Guinea~New Zealand~Fiji~Solomon Islands~Vanuatu~New Caledonia~French Polynesia~Samoa~Guam~Kiribati~Federated States of Micronesia~Tonga~American Samoa~Northern Mariana Islands~Marshall Islands~Palau~Cook Islands~Wallis and Futuna~Tuvalu~Nauru~Norfolk Island~Niue~Tokelau~Pitcairn Islands~']
+		,['europa','~Russia~Ukraine~France~Spain~Sweden~Norway~Germany~Finland~Poland~Italy~United Kingdom~Romania~Belarus~Kazakhstan~Greece~Bulgaria~Iceland~Hungary~Portugal~Austria~Czechia~Serbia~Ireland~Lithuania~Latvia~Croatia~Bosnia and Herzegovina~Slovakia~Estonia~Denmark~Switzerland~Netherlands~Moldova~Belgium~Armenia~Albania~North Macedonia~Turkey~Slovenia~Montenegro~Kosovo~Cyprus~Azerbaijan~Luxembourg~Georgia~Andorra~Malta~Liechtenstein~San Marino~Monaco~Vatican City~']
+		,['european union','~Austria~Belgium~Bulgaria~Croatia~Cyprus~Czech Republic~Denmark~Estonia~Finland~France~Germany~Greece~Hungary~Republic of Ireland~Italy~Latvia~Lithuania~Luxembourg~Malta~Netherlands~Poland~Portugal~Romania~Slovakia~Slovenia~Spain~Sweden~']
 	]
 	//lert('days='+days);
 	var map;
@@ -128,7 +134,7 @@ function covid(Id) {
 	var vDia;
 	var rn;
 	var vPais = [];
-	var filtro; //filtrar bd
+	var filtro = pd.get('filtro','1 2 RS SC'); //filtrar bd
 	setTimeout(init,1000);
 	//***************************
 	// log, debug
@@ -590,6 +596,17 @@ function covid(Id) {
 				rr += '<option'+(loc==Pais?' selected':'')+'>'+loc+'~';
 		});
 		//select country
+		domObj({tag:'input',name:'filtro',style:'font-size:80%;max-width:110px;'
+			,value:filtro
+			,title:'filtrar'
+			,ev_change:function(ev){
+					var v = trimm(ev.target.value);
+					if (v!=filtro) {
+						pd.put('filtro',ev.target.value);
+						window.location = pd.atalho();
+					}
+				}
+		,targ:dsC});		//select country
 		domObj({tag:'select',name:'Pais',style:'font-size:80%;max-width:110px;'
 			,'':troca(rr,'~','')
 			,title:'select location'
@@ -1044,29 +1061,25 @@ function covid(Id) {
 		
 		rn = new running(ds,true);
 		
-		var x='dados/last.csv';
-		if ((window.location+'').indexOf('dv.john')!=-1) {
-			x='dados/full_data.csv';
-		}
 		//carrega dados
-		filtro = trimm(prompt('load database'
-			+'\n'
-			+'\n1 - países'
-			+'\n2 - brasil'
-			+'\noutros = BR uf'
-			,'1'
-		));
+		if (!pd.get('filtro')) {
+			filtro = trimm(prompt('load database'
+				+'\n'
+				+'\n1 - países'
+				+'\n2 - brasil'
+				+'\n2 xx xx xx= UF br'
+				,filtro
+			));
+		}
 		eu.ti = ms();
 		var op = {},nop=0;
 		op.timeout = 60;
 		op.callback = carregaFim;
-		if (filtro=='1') {
+		if (filtro.indexOf('1')!=-1) {
 			op[nop++] = {url:'dados/countries.csv?k1'+format(ms()/(1000*60*10),0),callback:carregaGeo};
-			op[nop++] = {url:x+'?dt'+format(ms()/(1000*60*10),0),callback:carregaOms};
+			op[nop++] = {url:'dados/last.csv?dt'+format(ms()/(1000*60*10),0),callback:carregaOms};
 		}
-		if (filtro!='1') {
-			bdC = new bancoDados();
-			bdOms = new bancoDados();
+		if (filtro.indexOf('2')!=-1) {
 			op[nop++] = {url:'dados/lastbr.csv?dt'+format(ms()/(1000*60*10),0),callback:carregaBR}
 		}
 		if (true) {
@@ -1131,6 +1144,13 @@ function covid(Id) {
 	}
 	//***************************
 	function carregaBR(tx) {
+
+		//dados paises não carregados.
+		if (!bdC) {
+			bdC = new bancoDados();
+			bdOms = new bancoDados();
+		}
+		
 		//return;
 		// blob:https://covid.saude.gov.br/bfe25a06-731e-4063-97aa-648840ab26ef
 		// blob:https://covid.saude.gov.br/a615cf8c-346e-42f2-b6ea-0449f41a26f5
@@ -1164,10 +1184,11 @@ function covid(Id) {
 		var corr = false;//confirm('fazer correções acumulados "dobrados" ou zerados dos municípios br?');
 		var ecorr=new estat('municipios corrigidos');
 		var fil = false;
-		if (filtro.length>1) {
+		if (filtro.length>5) {
 			fil = true;
 			filtro = ' '+trimm(filtro.toUpperCase())+' ';
 		}
+		//lert(filtro+' '+filtro.length);
 		try {
 		while (br.next()) {
 			//padroniza data
@@ -1314,7 +1335,7 @@ function covid(Id) {
 		bdC.idx = bdC.index('Country',true);
 
 		//tit ?
-		if (filtro=='1') totTag(bdOms);
+		if (filtro.indexOf('1')!=-1) totTag(bdOms);
 		calcMediaDias(bdOms);
 
 		//calcula bd por habitantes
@@ -1474,7 +1495,8 @@ function covid(Id) {
 					t[1] += bd.get('new_deaths',0)*1;
 					t[2] += bd.get('total_cases',0)*1;
 					t[3] += bd.get('total_deaths',0)*1;
-					t[4] += bdC.getNum('Population','xx',''+bdC.idx[lo]);
+					var p = bdC.getNum('Population','xx',''+bdC.idx[lo]);
+					if (p>100) t[4] += p;
 				}
 			});
 		}
