@@ -648,7 +648,9 @@ function covid(Id) {
 	//***************************
 	function mostra() {
 		estatWWW();
-		if (tb==null) {
+		var n = !tb;
+		//lert('novo='+n+' '+pd);
+		if (n) {
 			ds.innerHTML = '';
 			//mostra data
 			domObj({tag:'h1',style:'margin:0;color:red;'
@@ -656,7 +658,7 @@ function covid(Id) {
 			,targ:ds});
 
 			//add tab
-			tb = new tabs({dst:domObj({tag:'div',targ:ds}),ped:pd,tab:pd.getJ('tabs','7')});
+			tb = new tabs({dst:domObj({tag:'div',targ:ds}),ped:pd,tab:pd.getJ('tabs','0')});
 
 			//projeto
 			var u = 'https://github.com/sgnyjohn/covid-19-days';
