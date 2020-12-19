@@ -90,30 +90,17 @@ function covid(Id) {
 	var bdC; //bd paises
 	var div = 1000000;
 	var casas = 100; 
-	var pd = new pedido();pd.updUrlJ = true;
-	var opTipo = pd.getJ('opTipo','per million inhabitants');
 	var cmp = 'new_cases,new_deaths,total_cases,total_deaths'.split(',');
-	var Pais = pd.getJ('Pais','Brazil');
 	var dti='999',dtf; //data maximo e minimo dos dados
 	var dt; //data max do país
 	//ORDEM PADRÃO... era 6 e 4 -> 7 e 6 -- md new deat+tot cases -> md new deat+md new case
 	var fs = function(a,b) {
-			return fSort(strZero(a[10]*1000,8)+strZero(a[6]*1000,8),strZero(b[10]*1000,8)+strZero(b[6]*1000,8),true);
+			return fSort(strZero(a[10]*1000,8)+strZero(a[6]*1000,8)
+				,strZero(b[10]*1000,8)+strZero(b[6]*1000,8)
+				,true
+			);
 		};
 	var popMinV = [20000,50000,100000,200000,500000,1000000,2000000,5000000];
-	var popMin = pd.getNum('popMin',200000);
-	var dMd = pd.get('dMd',21);
-	var vMd1 = 'average_'+dMd+'d_new_cases';//'average_5d_new_deaths'
-	var vMd = 'average_'+dMd+'d_new_deaths';//'average_5d_new_deaths'
-	var daysMd=10;
-	var days = [
-		['days+100c','days(total_cases>100)'
-			,function(bd,va) {return bd.get('total_cases')*bd.mult>100||va>0 ? va+1 : 0 } ]
-		,['days+'+daysMd+'md'+dMd,'days('+vMd+'>'+daysMd+')'
-			,function(bd,va) {return bd.get(vMd)*bd.mult>daysMd||va>0 ? va+1 : 0 } ]
-		//,['days+20d','day (total_deaths > 20)'
-		//	,function(bd) {return bd.get('total_deaths')*bd.mult>20?bd.get('days+20d',0,-1)*1+1:0} ]
-	];
 	var tag = [
 		['américa do sul','~Argentina~Bolivia~Bouvet Island~Brazil~Chile~Colombia~Ecuador~Falkland Islands~French Guiana~Guyana~Paraguay~Peru~South Georgia~South Sandwich Islands~Suriname~Uruguay~Venezuela~']
 		,['américa central','~Belize~Costa Rica~El Salvador~Guatemala~Honduras~Nicaragua~Panama~']
@@ -134,6 +121,23 @@ function covid(Id) {
 	var vDia;
 	var rn;
 	var vPais = [];
+
+	var pd = new pedido();pd.updUrlJ = true;
+	var opTipo = pd.getJ('opTipo','per million inhabitants');
+	var Pais = pd.getJ('Pais','Brazil');
+	var popMin = pd.getNum('popMin',200000);
+	var dMd = pd.get('dMd',21);
+	var vMd1 = 'average_'+dMd+'d_new_cases';//'average_5d_new_deaths'
+	var vMd = 'average_'+dMd+'d_new_deaths';//'average_5d_new_deaths'
+	var daysMd=10;
+	var days = [
+		['days+100c','days(total_cases>100)'
+			,function(bd,va) {return bd.get('total_cases')*bd.mult>100||va>0 ? va+1 : 0 } ]
+		,['days+'+daysMd+'md'+dMd,'days('+vMd+'>'+daysMd+')'
+			,function(bd,va) {return bd.get(vMd)*bd.mult>daysMd||va>0 ? va+1 : 0 } ]
+		//,['days+20d','day (total_deaths > 20)'
+		//	,function(bd) {return bd.get('total_deaths')*bd.mult>20?bd.get('days+20d',0,-1)*1+1:0} ]
+	];
 	var filtro = pd.get('filtro','1 2 RS SC'); //filtrar bd
 	setTimeout(init,1000);
 	//***************************
@@ -1099,7 +1103,7 @@ function covid(Id) {
 	function carregaGeo(tx) {
 		//Rank 	Country	obs	Population 	Date 	Source	s2
 		bdC = new bancoDados();
-		bdC.setTxt(tx);
+		bdC.addTxt(tx);
 		//lert(typeof(idx['China'])+' idx='+obj(idx));
 
 		//ds.innerHTML = ''; 
@@ -1113,7 +1117,7 @@ function covid(Id) {
 		var v = 'date,location,new_cases,new_deaths,total_cases,total_deaths'.split(',');
 		var bdOms1 = new bancoDados();
 		bdOms1.dlCol = ',';
-		bdOms1.setTxt(tx);
+		bdOms1.addTxt(tx);
 		//CRIA BD
 		bdOms = new bancoDados();
 		bdOms.mult = 1; 
@@ -1160,7 +1164,7 @@ function covid(Id) {
 		br = new bancoDados();
 		br.dlCol = '\t';
 		br.dlCol = ';';
-		br.setTxt(tx);//,function(v){return v[1]=='RS'});
+		br.addTxt(tx);//,function(v){return v[1]=='RS'});
 		//return;
 		
 		//bug 2
@@ -1293,6 +1297,7 @@ function covid(Id) {
 		//var db = '';
 		//aeval(v,function(v) {db+=v+'~';});
 		//bjNav(domObj({tag:'pre',targ:doc.body,'':db}));
+		
 		var qb='?z',va1,va2;
 		aeval(v,function(v) {
 			if (v[0]!=qb) {
@@ -1300,7 +1305,8 @@ function covid(Id) {
 				qb=v[0];
 			}
 			bdOms.addReg();
-			var d = dataSql(strToData(v[1]).getTime()+1000*60*60*24);
+			//var d = dataSql(strToData(v[1]).getTime()+1000*60*60*24);
+			var d = dataSql(strToData(v[1]).getTime()); //2020-dez: new sync with ourworldindata.org 
 			bdOms.set('date',leftAt(d,' ') );
 			bdOms.set('location','*BR '+v[0]);
 			bdOms.set('new_cases',v[2]-va1);

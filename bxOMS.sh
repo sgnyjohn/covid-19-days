@@ -1,5 +1,19 @@
 #!/bin/bash
 
+bxHopkins() {
+	local b="https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/"
+	#01-22-2020.csv
+	d=hop
+	! test -d $d && mkdir $d
+	find $d -size 0 -exec rm -fv "{}" \;
+	local dt=$(date -d "yesterday 13:00"  "+%m-%d-%Y")
+	local ad="$d/$dt.csv"
+	if ! test -e "$ad" ; then
+		wget -O "$ad" "$b/$dt.csv"
+	fi
+}
+
+
 bxOms() {
 	ur="https://www.who.int/emergencies/diseases/novel-coronavirus-2019/situation-reports/"
 	ds=/tmp/oms.html
@@ -33,7 +47,13 @@ bxOurWorldInData() {
 	fi
 	nov="full_data-$(date "+%Y-%m-%d-%H:%M:%S").csv"
 	tmp=/tmp/crona.bx
-	wget -O $tmp https://covid.ourworldindata.org/data/ecdc/full_data.csv
+	#até nov
+	local url="https://covid.ourworldindata.org/data/ecdc/full_data.csv"
+	#a partir dez
+	url="https://covid.ourworldindata.org/data/owid-covid-data.csv"
+	# ou ?
+	#url="https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/owid-covid-data.csv"
+	wget -O $tmp "$url"
 	if [ $? -ne 0 ]; then
 		echo "erro bx "
 		rm $tmp
@@ -82,8 +102,11 @@ cd $alvo
 if [ "$1" == "" ]; then
 	bxOms
 	bxOurWorldInData
+	bxHopkins
 	bxCsv "https://opendata.ecdc.europa.eu/covid19/casedistribution/csv" "eu_"
-else
+elif [ "$1" == "1" ]; then
 	bxOurWorldInData
+else
+	$1
 fi
 
