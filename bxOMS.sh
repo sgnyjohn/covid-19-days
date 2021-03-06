@@ -60,10 +60,11 @@ bxOurWorldInData() {
 	elif cmp $ant $tmp; then
 		echo "iguais"; #read
 	else
+		ln=last.csv
 		echo "dif"; #read
 		mv $tmp $nov
-		rm last.csv
-		ln -s $nov last.csv
+		rm $ln
+		ln -s $nov $ln
 	fi
 }
 
