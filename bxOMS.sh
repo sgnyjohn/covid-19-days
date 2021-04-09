@@ -1,9 +1,42 @@
 #!/bin/bash
 
+alvo=$(dirname "$0")/dados
+if ! test -d $alvo; then
+	echo "directory not exists $alvo"
+	exit 1
+fi
+cd $alvo
+
+hopWeb="https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/"
+hopDr=hop
+
+bxHopkinsTudo() {
+	if ! test -d $hopDr; then
+		echo "dir \"$hopDr\" não existe!"
+		exit 1
+	fi
+	local p=1
+	local ad
+	local dt
+	while [ "$dt" != "01-22-2020" ]; do
+		dt=$(date -d "$p day ago" "+%m-%d-%Y")
+		ad="$hopDr/$dt.csv"
+		if ! test -e $ad; then
+			echo "bx $ad "
+			wget -q -O "$ad" "$hopWeb/$dt.csv"
+		fi
+		let p=p+1
+	done
+}
+
 bxHopkins() {
-	local b="https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/"
+	if ! test -d $hopDr; then
+		echo "dir \"$hopDr\" não existe!"
+		exit 1
+	fi
 	#01-22-2020.csv
-	d=hop
+	local b=$hopWeb
+	local d=$hopDr
 	! test -d $d && mkdir $d
 	find $d -size 0 -exec rm -fv "{}" \;
 	local dt=$(date -d "yesterday 13:00"  "+%m-%d-%Y")
@@ -11,6 +44,10 @@ bxHopkins() {
 	if ! test -e "$ad" ; then
 		wget -O "$ad" "$b/$dt.csv"
 	fi
+	local x=$(pwd)
+	cd $alvo/..
+	bash hopUpdate.sh
+	cd $x	
 }
 
 
@@ -93,12 +130,6 @@ bxCsv() {
 	fi
 }
 
-alvo=$(dirname "$0")/dados
-if ! test -d $alvo; then
-	echo "directory not exists $alvo"
-	exit 1
-fi
-cd $alvo
 
 if [ "$1" == "" ]; then
 	bxOms

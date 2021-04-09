@@ -87,7 +87,7 @@ function covid(Id) {
 	var bd; // bd ativo 
 	var bdOms; //bd val abs
 	var bdPop; //bd por população 
-	var bdC; //bd paises
+	var bdLoc; //bd Locais
 	var div = 1000000;
 	var casas = 100; 
 	var cmp = 'new_cases,new_deaths,total_cases,total_deaths'.split(',');
@@ -96,12 +96,12 @@ function covid(Id) {
 	var cron = new Cron('tempos');
 	//ORDEM PADRÃO... era 6 e 4 -> 7 e 6 -- md new deat+tot cases -> md new deat+md new case
 	var fs = function(a,b) {
-			return fSort(strZero(a[10]*1000,8)+strZero(a[6]*1000,8)
-				,strZero(b[10]*1000,8)+strZero(b[6]*1000,8)
+			return fSort(strZero(a[7]*1000,8)+strZero(a[6]*1000,8)
+				,strZero(b[7]*1000,8)+strZero(b[6]*1000,8)
 				,true
 			);
 		};
-	var popMinV = [20000,50000,100000,200000,500000,1000000,2000000,5000000];
+	var popMinV = [20000,50000,100000,200000,500000,1000000,2000000,5000000,20000000,50000000,100000000];
 	var tag = [
 		['américa do sul','~Argentina~Bolivia~Bouvet Island~Brazil~Chile~Colombia~Ecuador~Falkland Islands~French Guiana~Guyana~Paraguay~Peru~South Georgia~South Sandwich Islands~Suriname~Uruguay~Venezuela~']
 		,['américa central','~Belize~Costa Rica~El Salvador~Guatemala~Honduras~Nicaragua~Panama~']
@@ -140,27 +140,34 @@ function covid(Id) {
 		//	,function(bd) {return bd.get('total_deaths')*bd.mult>20?bd.get('days+20d',0,-1)*1+1:0} ]
 	];
 	var filtro = pd.get('filtro','1 2 RS SC'); //filtrar bd
+	var verDias = false;
 	setTimeout(init,1000);
 	//***************************
 	// log, debug
 	function log(a) {
 		console.log(a);
 	}
-	/*function dev() {
-		return (new pedido()).host().indexOf('intranet') != -1;
-	}*/
-	function alertDev(s) {
-		if (dev()) {
-			alert(s);
-		} else {
-			log(s);
+	//***************************
+	// retorna população
+	function getPop(lo) {
+		if (!bdLoc.idxLoc) {
+			bdLoc.idxLoc = bdLoc.index('loc',true);
 		}
+		var pop;
+		var rg = bdLoc.idxLoc[lo];
+		//lert('l='+l+' rg='+rg);
+		if (typeof(rg)=='number') {
+			bdLoc.reg(rg);
+			pop = bdLoc.getNum('pop');
+		}
+		if (!pop) alertDev(lo+' pop='+pop+' rg='+rg+' trg='+typeof(rg));		
+		return pop;
 	}
 	//***************************
 	// colore o mapa.
 	var arqMap = 'BlankMap-World.svg?x=ef';
 	//var arqMap = 'mundo2.svg';
-	function map(ev) {
+	function mapaa(ev) {
 		//bjNav(mapa);
 		var titG = mapa.getElementsByTagName('p')[0];
 		var dtVar = strToData(dtf).getTime()-strToData(dti).getTime();
@@ -237,7 +244,7 @@ function covid(Id) {
 			while (bd.next()) {
 				var loc = bd.get('location');
 				//procura codigo 2
-				var s2 = bdC.get('s2','xx',''+bdC.idx[loc]).toLowerCase(); //sigla pais 2x
+				var s2 = bdLoc.get('s2','xx',''+bdLoc.idxLoc[loc]).toLowerCase(); //sigla pais 2x
 				if (s2=='xx') {
 					e.inc(s2+' '+loc,1);
 				} else {
@@ -500,7 +507,7 @@ function covid(Id) {
 			//só paises ?
 			if (o.value=='countries') {
 				pd.putJ('opTipo',o.value);
-				ds.appendChild(bdC.toDom());
+				ds.appendChild(bdLoc.toDom());
 				return;
 			}
 			opTipo = equals(o.value,'(') ? 'cases' : o.value;
@@ -519,7 +526,7 @@ function covid(Id) {
 			return;
 		}
 		//bjNav(o);alert(2);
-		if (!vazio(bdC.idx[p])) {
+		if (getPop(p)) { 
 			//click country name
 			//select posiciona
 			var v = document.querySelectorAll('select')[0].querySelectorAll('option');
@@ -549,7 +556,7 @@ function covid(Id) {
 				var cp = tr[c].childNodes.item(1);
 				var p = cp.innerHTML;
 				cp.setAttribute('title'
-					,format(bdC.getNum('Population','xx',''+bdC.idx[p]),0)
+					,format(getPop(htmlDecode(p)),0)
 						+' hab. ('+c+'º)'
 				);
 				//negrita linha país
@@ -680,21 +687,37 @@ function covid(Id) {
 				,'':'data .br: <a href='+u+'>'+u+'</a>'
 			,targ:ds});		
 		}
-		mostraPais(tb);
 		mostraGeral(tb);
+		mostraPais(tb);
 		tb.show();
 	}
 	//***************************
 	function mostraGeral() {
+		// dados mundo, ultimo dia
+		//lertDev('regs='+bd.count());
+		vDia = [bd.getRow(bd.count()-1)];var loa;
+		bd.top();
+		while (bd.next()) {
+			var lo = bd.get('location');
+			//dados mundo - ultima informação por local - bd ordenado local, data
+			if (loa!=lo) {
+				if (loa && bd.getNum('total_cases',0,-1)>-1) 
+					vDia[vDia.length] = bd.getVetor(bd.reg()-1);
+				loa = lo;
+			}
+		}		
+		
 		//mostra mapa
-		mapa = domObj({tag:'div',style:'width:100%;',style:''});
-		(new carregaUrl()).abre(arqMap,function(a,b,tx) {
-			//lert('tx='+tx.length);
-			domObj({tag:'p','':'???',targ:mapa});
-			domObj({tag:'div',targ:mapa}).innerHTML = tx;
-			setTimeout(map,100);
-		});
-		tb.addTop({label:'map',obj:mapa});
+		if (bdLoc) {
+			mapa = domObj({tag:'div',style:'width:100%;',style:''});
+			(new carregaUrl()).abre(arqMap,function(a,b,tx) {
+				//lert('tx='+tx.length);
+				domObj({tag:'p','':'???',targ:mapa});
+				domObj({tag:'div',targ:mapa}).innerHTML = tx;
+				setTimeout(map,100);
+			});
+			tb.addTop({label:'map',obj:mapa});
+		}
 		
 		/*/mostra resumo world
 		vr.sort(fs);
@@ -703,10 +726,14 @@ function covid(Id) {
 		*/
 		
 		//dados do mundo
+		//lert('vDia:'+vDia);
 		vDia.sort(fs);
-		tb.add({label:dt,obj:[
-			domObj({tag:'h2','':'world '+dt+'  - ('+opTipo+')'})
-			,tabEventos(bd.toDom({limit:999,values:vDia}))
+		var tit='latest data - ('+opTipo+')<br>'
+			+' population greater '+format(popMin,0)
+		;
+		tb.add({label:'latest',title:tit, obj:[
+			domObj({tag:'h2','':tit})
+			,tabEventos(bd.toDom({limit:999,values:vDia,fields:(a,i)=>{return i<8;}}))
 		]});
 		
 	}
@@ -723,12 +750,8 @@ function covid(Id) {
 				aeval(days,function(x) {x[3] = bd.get(x[0]);}); //days maximos
 			} 
 		});
-		if (vazio(dt)) {
-			alert(Pais+' missing');
-			return;
-		}
 
-		var pop = bdC.getNum('Population','xx',''+bdC.idx[Pais]);
+		var pop = getPop(Pais);
 		if (pop<1) {
 			alert(Pais+' missing population');
 			return;
@@ -756,7 +779,7 @@ function covid(Id) {
 		// date 0,location 1,new_cases 2,new_deaths 3,total_cases 4,total_deaths 5+days_c50 6+days_Nzero 7
 		var vp=[],vr=[],ods = new total(2),totD=-1;
 		// dados mundo, ultimo dia
-		vDia = [bd.getRow(bd.count()-1)];var loa;
+		//vDia = [bd.getRow(bd.count()-1)];var loa;
 		aeval(days,function(x){x[4]=[];});
 		bd.top();
 		while (bd.next()) {
@@ -770,11 +793,11 @@ function covid(Id) {
 				vp[vp.length] = bd.getVetor();
 				totD = bd.getNum('total_deaths',0);
 			}
-			//dados mundo - ultima informação por local - bd ordenado local, data
+			/*/dados mundo - ultima informação por local - bd ordenado local, data
 			if (loa!=lo) {
 				if (loa && bd.getNum('total_cases',0,-1)>-1) vDia[vDia.length] = bd.getVetor(bd.reg()-1);
 				loa = lo;
-			}
+			}*/
 			//vr resumo?
 			if (bd.get('date')==dt && bd.getNum('total_cases',0)>-1) {
 				//resumo
@@ -798,6 +821,11 @@ function covid(Id) {
 		}
 		//lert('vp='+vp.length+'\n\n'+vp);
 
+		//não há localização selecionada válida
+		if (vazio(dt)) {
+			return;
+		}
+
 		//monta e mostra grafico país
 		var vg = [],vg1 = [],vg2 = [];
 		var vv = 9;//days[0][0];
@@ -807,13 +835,19 @@ function covid(Id) {
 				var lb = '<b>'+strToDate(x[0]).getDayStr3()+'</b> '+x[0]+'<br><b>'+x[vv]+'</b>º day'
 				//vg[p] = [ x[0]+'\n'+strToDate(x[0]).getDayStr3()+' '+x[vv]+'º day', 1*x[7] ];
 				//vg1[p] = [ vg[p][0], 1*x[6] ];
-				vg2[vg2.length] = [ lb, 1*x[6], 20*x[7], 20*x[10] ];
+				if (verDias) {
+					vg2[vg2.length] = [ lb, 1*x[6], 20*x[7], 20*x[10] ];
+				} else {
+					vg2[vg2.length] = [ lb, 1*x[6], 20*x[7] ];
+				}
 				
 			//}
 		});
 		//date	location	new_cases	new_deaths	total_cases	total_deaths	
 		//lert(' vg='+vg2);
 		var d = opTipo.indexOf('cases')!=-1?0:2;
+		
+
 		var gr = new graphLine({
 			scales:false
 			//,title:'meu gráfico dsf'
@@ -822,7 +856,7 @@ function covid(Id) {
 			,color:['blue','red','#ff00ff']
 			,title:['covid-19 - '+Pais
 				,'<tspan style="fill:red;">'+cmp[1]+' - '+format(vg2[vg2.length-1][2]/20,2)+'</tspan>'
-					+' X <tspan style="fill:#ff00ff;">'+cmp[3]+'/days - '+format(vg2[vg2.length-1][3]/20,2)+'</tspan>'
+					+(verDias?' X <tspan style="fill:#ff00ff;">'+cmp[3]+'/days - '+format(vg2[vg2.length-1][3]/20,2)+'</tspan>':'')
 					+' X <tspan style="fill:blue;">'+cmp[0]+' (1/20) - '+format(vg2[vg2.length-1][1],2)+'</tspan>'
 					+' - averange '+dMd+' days'
 				,'until: '+dt+' inhab.: '+format(pop,0)+' '+cmp[3]+': '+format(totD,0)
@@ -858,22 +892,24 @@ function covid(Id) {
 			,tabEventos(bd.toDom({limit:999,values:vp}))
 		]});
 
-		//ranking dias do país
-		tb.addTop({label:'ranking',obj:[
-			domObj({tag:'h2','':'Evolution of the position: '+tPais+' - ('+opTipo+')'})
-			,bl.toDom({limit:999})
-		]});		
+		if (verDias) {
+			//ranking dias do país
+			tb.addTop({label:'ranking',obj:[
+				domObj({tag:'h2','':'Evolution of the position: '+tPais+' - ('+opTipo+')'})
+				,bl.toDom({limit:999})
+			]});		
 
-		//mostra dias
-		aeval(days,function(x,nc) {
-			x[4].sort(fs);
-			var axa=tabEventos(bd.toDom({limit:999,values:x[4]}));
-			axa.className += ' days_'+nc;
-			tb.addTop({label:x[1],obj:[
-				domObj({tag:'h2','':tPais+' <b style="color:blue;">'+x[3]+'º</b> '+x[1]+' - ('+opTipo+')'})
-				,axa
-			]});
-		});
+			//mostra dias
+			aeval(days,function(x,nc) {
+				x[4].sort(fs);
+				var axa=tabEventos(bd.toDom({limit:999,values:x[4]}));
+				axa.className += ' days_'+nc;
+				tb.addTop({label:x[1],obj:[
+					domObj({tag:'h2','':tPais+' <b style="color:blue;">'+x[3]+'º</b> '+x[1]+' - ('+opTipo+')'})
+					,axa
+				]});
+			});
+		}
 		
 		//show dow
 		// totais
@@ -892,6 +928,7 @@ function covid(Id) {
 			domObj({tag:'h2','':tPais+' notifications by day of the week'})
 			,ods.show()
 		]});
+		
 
 	}
 	//***************************
@@ -908,7 +945,7 @@ function covid(Id) {
 			} 
 		});
 
-		var pop = bdC.getNum('Population','xx',''+bdC.idx[Pais]);
+		var pop = getPop(Pais);
 		var tPais = Pais+' - '+format(pop,0)+' inhab.';
 		
 		//mostra data
@@ -1100,13 +1137,18 @@ function covid(Id) {
 		var op = {},nop=0;
 		op.timeout = 60;
 		op.callback = carregaFim;
+		op[nop++] = {url:'dados/pop.csv?k1'+format(ms()/(1000*60*10),0),callback:carregaLoc};
 		if (filtro.indexOf('1')!=-1) {
-			op[nop++] = {url:'dados/countries.csv?k1'+format(ms()/(1000*60*10),0),callback:carregaGeo};
+			//op[nop++] = {url:'dados/countries.csv?k1'+format(ms()/(1000*60*10),0),callback:carregaGeo};
 			op[nop++] = {url:'dados/last.csv?dt'+format(ms()/(1000*60*10),0),callback:carregaOms};
 		}
 		if (filtro.indexOf('2')!=-1) {
-			op[nop++] = {timeout:120,url:'dados/BrPop.csv?dt'+format(ms()/(1000*60*10),0),callback:carregaBRpop};
+			//op[nop++] = {timeout:120,url:'dados/pop.csv?dt'+format(ms()/(1000*60*10),0),callback:carregaBRpop};
 			op[nop++] = {timeout:120,url:'dados/lastbr.csv?dt'+format(ms()/(1000*60*10),0),callback:carregaBR};
+		}
+		if (filtro.indexOf('3')!=-1) {
+			//op[nop++] = {timeout:120,url:'dados/pop.csv?dt'+format(ms()/(1000*60*10),0),callback:carregaBRpop};
+			op[nop++] = {timeout:120,url:'dados/hop.csv?dt'+format(ms()/(1000*60*10),0),callback:carregaBR};
 		}
 		if (true) {
 			new loader(op);
@@ -1122,14 +1164,11 @@ function covid(Id) {
 		}
 	}
 	//***************************
-	function carregaGeo(tx) {
-		//Rank 	Country	obs	Population 	Date 	Source	s2
-		bdC = new bancoDados();
-		bdC.addTxt(tx);
-		//lert(typeof(idx['China'])+' idx='+obj(idx));
-
-		//ds.innerHTML = ''; 
-		//bdC.toDom(ds,999);
+	function carregaLoc(tx) {
+		//antigo -> Rank 	Country	obs	Population 	Date 	Source	s2
+		//novo -> loc pop lat lon nv
+		bdLoc = new bancoDados();
+		bdLoc.addTxt(tx);
 	}
 	//***************************
 	function carregaOms(tx) {
@@ -1145,8 +1184,15 @@ function covid(Id) {
 		bdOms = new bancoDados();
 		bdOms.mult = 1; 
 		bdOms1.top();
+		var pop=0,la='?';
 		while (bdOms1.next()) {
+			var l = bdOms1.get('location','');
 			//linhas sem informações ignora
+			if (l!=la) {
+				la = l;
+				pop = getPop(l);
+			}
+			if (pop<popMin) continue;
 			if (bdOms1.getNum("total_cases")>0&&bdOms1.getNum("total_deaths")>0) {
 				bdOms.addReg();
 				aeval(v,function(v) {
@@ -1159,29 +1205,14 @@ function covid(Id) {
 			*/
 		}
 	}
-	/***************************
-	// exclui dias duplos duplos
-	function carregaBRbugRegDuplos(br) {
-		var r = 0;
-		aeval(br,function() {r++; br.put('_reg',r);});
-		var vord = ['regiao','coduf','codmun','data','_reg'];
-		br.sort(vord);
-		var qb = [],xxi=0,xxd=0;
-		br.eval(function(x){
-			var ch = br.getArr(vord);
-			if (qb==ch) {
-				xxi++;
-			} else {
-				qb = br.getArr(vord);
-				xxd++;
-			}
-		});
-		alert('ig='+xxi+' dif='+xxd);
-	}*/
 	//***************************
 	function carregaBR(tx) {
 		//lert(tx.length+'\n\n'+tx);
 		//dados paises não carregados.
+		
+		if (!bdOms) {
+			bdOms = new bancoDados();
+		}		
 
 		//import tx
 		br = new bancoDados();
@@ -1209,8 +1240,8 @@ function covid(Id) {
 				}
 				
 				if (l!=la) {
-					pop = bdC.getNum('Population','xx',''+bdC.idx[l]);
 					la = l;
+					pop = getPop(l);
 				}
 				
 				if (pop>=popMin) {
@@ -1230,195 +1261,6 @@ function covid(Id) {
 		}
 	}
 	//***************************
-	function carregaBRpop(tx) {
-
-		if (!bdC) {
-			bdC = new bancoDados();
-			bdOms = new bancoDados();
-		}		
-		
-		var br = new bancoDados();
-		br.dlCol = '\t';
-		//lert('tx pobr='+tx);
-		br.addTxt(tx);
-		//lert(br.count()+' regs BRPOP tx='+tx);
-	
-		br.top();
-		while (br.next()) {
-			bdC.addReg();
-			bdC.set('Country',br.get('location'));
-			bdC.set('Population',br.get('pop'));
-		}
-		//lert(bdC.count()+' bdC='+bdC.getMatriz());
-		
-		bdC.idx = bdC.index('Country',true);
-
-	}
-	/***************************
-	function carregaBR1(tx) {
-
-		//dados paises não carregados.
-		if (!bdC) {
-			bdC = new bancoDados();
-			bdOms = new bancoDados();
-		}
-		
-		//return;
-		// blob:https://covid.saude.gov.br/bfe25a06-731e-4063-97aa-648840ab26ef
-		// blob:https://covid.saude.gov.br/a615cf8c-346e-42f2-b6ea-0449f41a26f5
-		//lert('br='+tx.length);
-		br = new bancoDados();
-		//br.dlCol = '\t';
-		br.dlCol = ';';
-		br.addTxt(tx);//,function(v){return v[1]=='RS'});
-		//return;
-		
-		//bug 2
-		var rrr = 0;
-		br.eval(function() {rrr++; br.set('_reg',rrr);});
-		br.sort('regiao,coduf,codmun,data,_reg');
-
-
-		//formato regiao	estado	municipio	coduf	codmun	codRegiaoSaude	nomeRegiaoSaude	data	semanaEpi	populacaoTCU2019	casosAcumulado	obitosAcumulado	Recuperadosnovos	emAcompanhamentoNovos
-		var t = new total(2);
-		var tc = {};
-		br.top();
-		var mua='?',cma='?',popa,vtp={};
-		var caa,oaa,tr1=0,tr2=0;
-		var corr = false;//confirm('fazer correções acumulados "dobrados" ou zerados dos municípios br?');
-		var ecorr=new estat('municipios corrigidos');
-		var fil = false;
-		if (filtro.length>5) {
-			fil = true;
-			filtro = ' '+trimm(filtro.toUpperCase())+' ';
-		}
-		//lert(filtro+' '+filtro.length);
-		try {
-		while (br.next()) {
-			//padroniza data
-			var dt = dateSql(strToDate(br.get('data')));
-			//ignora bugs, lixo?...
-			if ((equals(dt,'2020-05-30') && br.getNum('semanaEpi')==22)||br.get('data')=='') {
-				continue;
-			}
-			var uf = br.get('estado');
-			if (fil && filtro.indexOf(' '+uf+' ')==-1) {
-				continue;
-			}
-			var mu = br.get('municipio');
-			var pop = br.getNum('populacaoTCU2019');
-			var ca = br.getNum('casosAcumulado');
-			var oa = br.getNum('obitosAcumulado');
-			
-			
-			var cm = br.get('codmun');
-			//REMENDO 1 erro planilha.
-			if (!vazio(cm)) {
-				//alert(mu+' mua='+mua+'\n'+cm.substring(0,6)+'=='+cma.substring(0,6));
-				cm = cm.substring(0,6);
-				if (mu==''&&cm==cma) {
-					mu = mua;
-					pop = popa;
-					tr1++;
-				}
-				//REMENDO acumulados muns após apagão de dados 5a12/11/2020 e véspera 1o turno 15/11
-				// foi lançado em 10/11 acumulados muns como novos
-				if (corr && cma==cm) {
-					if (ca>200 && ca-caa>caa*0.9) { ecorr.inc(uf+' '+mu,1);ca = ca/2;tr2++;} //se QSE duplicou pega metade
-					if (ca==0 && caa>10) {ecorr.inc(uf+' '+mu,1);ca = caa;tr2++}; //se 0 pega anterior
-					if (oa>200 && oa-oaa>oaa*0.9) {ecorr.inc(uf+' '+mu,1);oa = oa/2;tr2++;}
-					if (oa==0 && oaa>10) {ecorr.inc(uf+' '+mu,1);oa = oaa;tr2++};
-				}
-			}
-			mua = mu;
-			cma = cm;
-			popa = pop;
-			//remendo 2
-			caa = ca;
-			oaa = oa;
-			
-			
-			//lert(br.get('data')+' -> '+dataSql(br.get('data'))+' -> '+dt);
-			if (false&&mu==''&&cm!='') {
-				//eu estava filtrando pelo nome do mun vazio e somando como tot uf dados
-				//   estaduais sem classificação de municipio. é o codmun tem q ser vazio 
-				//	 para totais uf e br
-			} else if (br.get('coduf')==76) {
-				//tot br
-				t.set([uf,dt,ca,oa]);
-				if ( !tc[uf] && pop>0 ) tc[uf] = pop;
-			} else if ( cm!='' && (pop<popMin||isNaN(pop)) ) {
-				// dados municipio menores, por intervalos
-				uf = '?';
-				var ii=0;
-				for (var i=0;i<popMinV.length;i++) {
-					if (pop<popMinV[i]) {
-						uf = format(ii,0)+' a '+format(popMinV[i],0)+' inhab.';
-						break
-					}
-					ii = popMinV[i];
-				}
-				t.inc([uf,dt,ca,oa]);
-				//soma pop
-				if (pop>0 && !vtp[uf+mu]) {
-					vtp[uf+mu] = true;
-					if (!tc[uf]) {
-						tc[uf] = 0;
-					}
-					tc[uf] += pop;
-				}
-			} else if (uf=='') {
-			} else { //dados ufs
-				if (!vazio(mu)) uf += ' '+mu;//+'*'+cm;
-				t.set([uf,dt,ca,oa]);
-				if ( !tc[uf] && pop>0 ) tc[uf] = pop;
-			}
-		} //fim bd.next
-		} catch (e) {
-			alertDev('erro carregaBr '+e+' '+br.getVetor()+'\n\n'+erro(e));
-		}
-		
-		//if (tr1>0) alert(tr1+' correções feitas relativo identificação dos municipios br');
-		if (tr2>0) {
-			alert(tr2+' correções feitas acumulado lançado como novos nos municipios br');
-			alert('corrigidos - valores %\n\n'+ecorr.toTxt());
-		}
-		
-		var v = t.getVector();
-		v.sort(function(a,b) {return fSortCols(a,b,[0,1])});
-		//var db = '';
-		//aeval(v,function(v) {db+=v+'~';});
-		//bjNav(domObj({tag:'pre',targ:doc.body,'':db}));
-		
-		var qb='?z',va1,va2;
-		aeval(v,function(v) {
-			if (v[0]!=qb) {
-				va1=0;va2=0;
-				qb=v[0];
-			}
-			bdOms.addReg();
-			//var d = dataSql(strToData(v[1]).getTime()+1000*60*60*24);
-			var d = dataSql(strToData(v[1]).getTime()); //2020-dez: new sync with ourworldindata.org 
-			bdOms.set('date',leftAt(d,' ') );
-			bdOms.set('location','*BR '+v[0]);
-			bdOms.set('new_cases',v[2]-va1);
-			bdOms.set('new_deaths',v[3]-va2);
-			bdOms.set('total_cases',v[2]);
-			bdOms.set('total_deaths',v[3]);
-			//lert(v[1]+' '+bdOms.getVetor()+' '+strToData(v[1]));
-			va1 = v[2];
-			va2 = v[3];
-		});
-		//lert('vs.tam='+v.length+' '+bdOms.count());
-		
-		//bd populaçao
-		aeval(tc,function(v,k) {
-			bdC.addReg();
-			bdC.set('Country','*BR '+k);
-			bdC.set('Population',v);
-		});
-	}*/
-	//***************************
 	function carregaFim(ld) {
 		//lert('tempo ='+(ms()-eu.ti));	
 		//lert('br='+ld);
@@ -1432,10 +1274,6 @@ function covid(Id) {
 			cron.ev('loader');
 		}
 
-		//indexa Geo
-		bdC.idx = bdC.index('Country',true);
-		cron.ev('Country index');
-
 		//tit ?
 		if (filtro.indexOf('1')!=-1) {
 			totTag(bdOms);
@@ -1447,20 +1285,15 @@ function covid(Id) {
 		//calcula bd por habitantes
 		bdPop = new bancoDados('por '+div+' habitantes');
 		bdPop.mult = 50000000/div; //multiplicador de limites
+		var la,pop;
 		bdOms.eval(function() {
 			bdPop.addReg();
 			var l = bdOms.get('location');
 			bdPop.set('date',bdOms.get('date'));
 			bdPop.set('location',l);
-			var pop = -1;
-			var rg = bdC.idx[l];
-			//lert('l='+l+' rg='+rg);
-			if (typeof(rg)=='number') {
-				bdC.reg(rg);
-				pop = bdC.getNum('Population');
-				if (l=='dsfBrazil') {
-					alert('l='+l+' rg='+rg+' pop='+bdC.getVetor());
-				}
+			if (la!=l) {
+				pop = getPop(l);
+				la = l;
 			}
 			//arredonda em casas
 			aeval(cmp,function(x) {
@@ -1569,7 +1402,6 @@ function covid(Id) {
 					}
 				}
 				bd.set('new_deaths_av_4d',Math.floor(t/Math.min(md.length,4)+0.5));
-								
 			}
 
 			//incrementa contadores conforme vetor
@@ -1606,7 +1438,7 @@ function covid(Id) {
 					t[1] += bd.get('new_deaths',0)*1;
 					t[2] += bd.get('total_cases',0)*1;
 					t[3] += bd.get('total_deaths',0)*1;
-					var p = bdC.getNum('Population','xx',''+bdC.idx[lo]);
+					var p = getPop(lo);
 					if (p>100) t[4] += p;
 				}
 			});
@@ -1628,13 +1460,13 @@ function covid(Id) {
 				pop = Math.max(pop,v[4]);
 			});
 			//add tot população da tag
-			bdC.addReg();
-			bdC.set('Country','*'+e[0]);
-			bdC.set('Population',pop);
+			bdLoc.addReg();
+			bdLoc.set('loc','*'+e[0]);
+			bdLoc.set('pop',pop);
 			
 		});
-		//reindexa bdC
-		bdC.idx = bdC.index('Country',true);
+		//reindexa bdLoc
+		bdLoc.idxLoc = bdLoc.index('loc',true);
 	}
 
 }
