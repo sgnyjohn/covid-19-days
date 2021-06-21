@@ -1,5 +1,12 @@
 #!/bin/bash
 
+log() {
+	local lg=/var/log/coronavirus-bx.log
+	echo "$(date "+%Y-%m-%d	não %H:%M:%S_%a")	$1" >>$lg
+}
+
+log "bxOms init"
+
 alvo=$(dirname "$0")/dados
 if ! test -d $alvo; then
 	echo "directory not exists $alvo"
@@ -31,7 +38,7 @@ bxHopkinsTudo() {
 
 bxHopkins() {
 	if ! test -d $hopDr; then
-		echo "dir \"$hopDr\" não existe!"
+		log "dir \"$hopDr\" não existe!"
 		exit 1
 	fi
 	#01-22-2020.csv
@@ -43,11 +50,19 @@ bxHopkins() {
 	local ad="$d/$dt.csv"
 	if ! test -e "$ad" ; then
 		wget -O "$ad" "$b/$dt.csv"
+		if ! test -e "$ad"; then
+			log "não existe"
+		elif [ $(stat -c %s "$ad") -le 300000 ]; then
+			log "tamanho invalido rm $(ls -l $ad)"
+			rm $ad
+		elif test -e $ad; then
+			log "vai processar $aq"
+			local x=$(pwd)
+			cd $alvo/..
+			bash hopUpdate.sh
+			cd $x	
+		fi
 	fi
-	local x=$(pwd)
-	cd $alvo/..
-	bash hopUpdate.sh
-	cd $x	
 }
 
 
@@ -132,11 +147,16 @@ bxCsv() {
 
 
 if [ "$1" == "" ]; then
+	log "==> bxOms bxOms"
 	bxOms
+	log "==> bxOms bxOurWorldInData"
 	bxOurWorldInData
+	log "==> bxOms bxHopkins"
 	bxHopkins
+	log "==> bxOms bxCsv"
 	bxCsv "https://opendata.ecdc.europa.eu/covid19/casedistribution/csv" "eu_"
 elif [ "$1" == "1" ]; then
+	log "==> bxOms bxOurWorldInData"
 	bxOurWorldInData
 else
 	$1
