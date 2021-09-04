@@ -712,7 +712,7 @@ function covid(Id) {
 		}		
 		
 		//mostra mapa
-		if (bdLoc) {
+		if (bdLoc && false) {
 			mapa = domObj({tag:'div',style:'width:100%;',style:''});
 			(new carregaUrl()).abre(arqMap,function(a,b,tx) {
 				//lert('tx='+tx.length);
@@ -937,7 +937,7 @@ function covid(Id) {
 
 	}
 	//***************************
-	function mostraA() {
+	function mostraA_LIXO() {
 		//procura pais e pega dt, days maximos do país
 		//	e monta option selects
 		dt=''; 
@@ -959,14 +959,15 @@ function covid(Id) {
 		,targ:ds});
 		
 		//mostra mapa
-		if (true) {
-		mapa = domObj({tag:'div',style:'width:100%;',targ:ds,style:''});
-		(new carregaUrl()).abre(arqMap,function(a,b,tx) {
-			//lert('tx='+tx.length);
-			domObj({tag:'p','':'???',targ:mapa});
-			domObj({tag:'div',targ:mapa}).innerHTML = tx;
-			setTimeout(map,100);
-		});
+		alert('mapa');
+		if (false) {
+			mapa = domObj({tag:'div',style:'width:100%;',targ:ds,style:''});
+			(new carregaUrl()).abre(arqMap,function(a,b,tx) {
+				//lert('tx='+tx.length);
+				domObj({tag:'p','':'???',targ:mapa});
+				domObj({tag:'div',targ:mapa}).innerHTML = tx;
+				setTimeout(map,100);
+			});
 		}
 			
 		//monta evol ranking pais ult ne days

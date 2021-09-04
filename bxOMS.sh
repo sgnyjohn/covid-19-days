@@ -17,6 +17,63 @@ cd $alvo
 hopWeb="https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/"
 hopDr=hop
 
+#########################################
+#arquiva dados em gz
+arquiva() {
+	# antes - /dev/ploop16276p1  20509264 18851156    1170128  95% /
+	# depois - /dev/ploop16276p1   20G   14G  6,1G  69% /
+	# 1,2G Jun 21 13:55 covid19-2021-06-21-13-48-29-Seg.tar.gz
+	
+	diasManter=28
+	diasCopiar=14 
+
+	# em /etc/crontab para todos os dias as 2
+	# 13 2 * * * root bash /srv/guarani/noticias/limpa.sh
+
+	od=/var/www/lar.art.br/dev/coronavirus/dados
+	dd=/home/signey/bak/covid
+	adPrf=covid19
+	if [ "$(hostname)" == "rasp" ]; then
+		od=/srv/http/coronavirus/dados
+		dd=/dados/webDados/covid
+	fi
+
+	at=/tmp/$adPrf-TMP-limpa.txt
+
+	#de 7 em 7 dias com janela 40min
+	temF=$(find $dd  -mmin -$[1440*$diasCopiar-40] -name "$adPrf-*.tar.gz" -ls)
+	if [ "$temF" != "" ]; then
+		echo "===> ABORT tem feito $diasCopiar dias...
+			$temF
+		"
+		exit 0
+	fi
+
+	ad="$dd/$adPrf-$(date "+%Y-%m-%d-%H-%M-%S-%a").tar.gz"
+
+	cd $od
+	find -mtime +$diasManter -type f|egrep -v "pop.csv|.7z|lixo" >$at
+
+	tar czvf $ad -T $at
+	f=$?
+
+	#exclui?
+	if [ $f -eq 0 ]; then
+		cat $at|while read ln; do
+			if true; then
+				rm -fv $ln
+			else
+				echo "rm $ln"
+			fi
+		done
+	fi
+
+	#rm $at
+	ls -lh $ad
+
+}
+
+###########################################################
 bxHopkinsTudo() {
 	if ! test -d $hopDr; then
 		echo "dir \"$hopDr\" não existe!"
