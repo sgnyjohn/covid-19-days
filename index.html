@@ -11,9 +11,14 @@
 <script charset="UTF-8"  language="JavaScript" src="covid.js"></script>
 
 <style>
+	
+BODY {background-color:#030405;color:#eaebec;}
+A {color:#eaebec;}
+A:visited {color:#5aebec;}
 
 BODY,INPUT,SELECT {
-	background-color:#CFEFFF;
+	background-color:#0F1F2F;
+	color:#eaebec;
 	font-family:"Droid Sans";
 }
 INPUT,SELECT {
@@ -49,7 +54,8 @@ table.days_2xx th:nth-last-child(1),table.days_2 td:nth-child(11) {
 
 /* deaths */
 table.bdToDom td:nth-child(4),table.bdToDom td:nth-child(6),table.bdToDom td:nth-child(8) {
-	background-color: #ffcfcf;
+	color: #ffcfcf;
+	background-color: #0f4f0f;
 }
 
 /* atalho país */
@@ -57,6 +63,7 @@ table.bdToDom td:nth-child(2) {
     cursor:pointer;
     text-decoration:underline;
     color:darkblue;
+    background-color:#cfcfcf;
 }
 table.bdToDom td:nth-child(2):hover {
     background-color:#FF9999;
@@ -96,6 +103,22 @@ svg {
  width: 90%; 
  left: 0; 
  top: 0;
+ background: #cccccc;
+}
+
+DIV.graphLabel {
+	background:white;
+	color: black;
+}
+TD.tabsC TABLE  {
+	/* não funciona por causa do colspan no TD? */
+}
+TABLE.tabs TABLE  {
+	margin:0 auto;
+}
+TABLE TR.plus {
+	xborder:1px solid white;
+	background-color:#663333;
 }
 
 </style>

@@ -92,7 +92,7 @@ function covid(Id) {
 	var div = 1000000;
 	var casas = 100; 
 	var cmp = 'new_cases,new_deaths,total_cases,total_deaths'.split(',');
-	var dti='999',dtf; //data maximo e minimo dos dados
+	var dti='999',dtf='0'; //data maximo e minimo dos dados
 	var dt; //data max do país
 	var cron = new Cron('tempos');
 	//ORDEM PADRÃO... era 6 e 4 -> 7 e 6 -- md new deat+tot cases -> md new deat+md new case
@@ -140,7 +140,10 @@ function covid(Id) {
 		//,['days+20d','day (total_deaths > 20)'
 		//	,function(bd) {return bd.get('total_deaths')*bd.mult>20?bd.get('days+20d',0,-1)*1+1:0} ]
 	];
-	var filtro = pd.get('filtro','1 2 RS SC'); //filtrar bd
+	var filtro = pd.get('filtro','2'); //filtrar bd
+	var paisClick;
+	var addRebanhoO;
+	var abaVarO;
 	setTimeout(init,1000);
 	//***************************
 	// log, debug
@@ -162,6 +165,245 @@ function covid(Id) {
 		}
 		if (!pop) alertDev(lo+' pop='+pop+' rg='+rg+' trg='+typeof(rg));		
 		return pop;
+	}
+	//***************************
+	// aba variações
+	function abaVariacoes(ds) {
+		if (!abaVarO) {
+			//ds.innerHTML = '<h1>vra</h1>';
+			var b = [];
+			//bd ordenado location,data. procura datas pre escolhidas.
+			bdOms.top();
+			var sErro = '';
+			var l,nv=0;
+			while (bdOms.next()) {
+				var l1 = bdOms.get('location',0,1);
+				//eb(l+' '+l1)
+				//quebra na proxima?
+				if ( l1 != l ) {
+					var vd = [bdOms.getNum(vMd),bdOms.getNum(vMd,0,-7),bdOms.getNum(vMd,0,-14)];
+					var pop = getPop(l);
+					if (pop==0) {
+						sErro += 'pop zero '+l+'\n';
+					} else if (l && vd[0]>0 && vd[1]>0 && vd[2]>0) {
+						var rg = b.length;
+						b[rg] = {};
+						b[rg].loc = l;
+						var vd = [bdOms.getNum(vMd),bdOms.getNum(vMd,0,-7),bdOms.getNum(vMd,0,-14)];
+						b[rg].vd = vd;
+						var vc = [bdOms.getNum(vMd1),bdOms.getNum(vMd1,0,-7),bdOms.getNum(vMd1,0,-14)];
+						b[rg].vc = vc;
+						b[rg].vdt = [bdOms.get('date'),bdOms.get('date',0,-7),bdOms.get('date',0,-14)];
+						b[rg].c0 = vc[0]/vc[1];
+						b[rg].d0 = vd[0]/vd[1];
+						b[rg].c1 = vc[1]/vc[2];
+						b[rg].d1 = vd[1]/vd[2];
+						b[rg].c = vc[0]/vc[2];
+						b[rg].d = vd[0]/vd[2];
+						b[rg].dm = vd[0]/pop*1000000;
+						b[rg].cm = vc[0]/pop*1000000;
+						nv++;
+					}
+					l = l1;
+				}
+			}
+			var cb = '<tr><th rowspan=2>local<th rowspan=2>população<th colspan=3>% variação<br>@@<th colspan=4>@@'
+				+'<tr><th>ult<br>semana<th>semana<br>anterior<th>2 últimas<br>semanas'
+				+'<th>'+dtf+'<th>-7 dias<th>-14 dias<th>'+dtf+'<br>milhão/hab.'
+			;
+			var t = '';
+			b = b.sort((a1,b1)=>{return fSort(a1.d,b1.d,true);});
+			aeval(b,(vl)=>{
+				if (vl.d0>1 && vl.d1>1 ) {
+					t += '<tr>'
+						+'<td>'+vl.loc
+						+'<td>'+format(getPop(vl.loc),0) //vl.vdt
+						+'<td>'+format(vl.d0*100-100,2)
+						+'<td>'+format(vl.d1*100-100,2)
+						+'<td>'+format(vl.d*100-100,2)
+						+'<td>'+format(vl.vd[0],0)
+						+'<td>'+format(vl.vd[1],0)
+						+'<td>'+format(vl.vd[2],0)
+						+'<td>'+format(vl.dm,2)
+					;
+				}
+			});
+			var t1 = '';
+			b = b.sort((a1,b1)=>{return fSort(a1.c,b1.c,true);});
+			aeval(b,(vl)=>{
+				if (vl.c0>1 && vl.c1>1 ) {
+					t1 += '<tr>'
+						+'<td>'+vl.loc
+						+'<td>'+format(getPop(vl.loc),0) //vl.vdt
+						+'<td>'+format(vl.c0*100-100,2)
+						+'<td>'+format(vl.c1*100-100,2)
+						+'<td>'+format(vl.c*100-100,2)
+						+'<td>'+format(vl.vc[0],0)
+						+'<td>'+format(vl.vc[1],0)
+						+'<td>'+format(vl.vc[2],0)
+						+'<td>'+format(vl.cm,2)
+					;
+				}
+			});
+			//deb('nv loc: '+nv);
+			//_c(b);
+			abaVarO = domObj({tag:'div'
+				,'':'<br><h2>locais onde o % aumenta há 2 semanas</h2>'
+				+'<br><table class=bdToDom border=1>'+troca(cb,'@@',vMd)+t+'</table><br>'
+				+'<br><table class=bdToDom border=1>'+troca(cb,'@@',vMd1)+t1+'</table><br>'
+				+'<pre>'+sErro+'</pre>'
+			});
+		}
+		ds.appendChild(abaVarO);
+	}
+	//***************************
+	// add análise rebanho
+	function abaRebanho(ds) {
+		if (!addRebanhoO) {
+			var tbe = '';
+			bdOms.top();
+			var b = {};
+			var erPop = '';
+			//pega dados da data mais recente de cada location
+			while (bdOms.next()) {
+				var l = bdOms.get('location');
+				var d = bdOms.get('date');
+				var r = b[l];
+				// chars loc > 6 
+				if (
+					(!r || r[1]<d)   //loc já ou data menor
+					&& (l.charAt(0)!='*'||l.length>6) //se br apenas cidade
+					&& l.indexOf('<')==-1 // não tot de locais.
+					) 
+					{
+					var p = getPop(l);
+					if (!isNumber(p)) erPop+=', '+l;
+					b[l] = [l,d,p
+						,bdOms.getNum('total_deaths')
+						,bdOms.getNum(vMd)
+						,'?' //5 fx
+						,bdOms.getNum('total_deaths')/p //6 mortandade
+					];
+				}
+			}
+			//transf VET
+			var vb = [];
+			var tPop = 0;
+			aeval(b,(vl)=>{vb[vb.length] = vl,tPop+=vl[2];});
+			b={};
+			//ordena população
+			tbe += '◦ '+vb.length+' localizações selecionadas ('
+				+format(tPop,0)+' habitantes) ordenadas por população\n'
+			;
+			vb.sort((a,b)=>{return fSort(b[2],a[2]);});
+			//lert(vb.length+' '+vb);
+			//cria 7 faixas e marca nos regs
+			tPop = tPop/7; //7 faixas
+			tbe += '◦ localizações divididas em 7 faixas de população de aproximadamente '
+				+format(tPop,0)+' habitantes cada\n'
+			;
+			var fx = 0, tp = 0 ;
+			var ef = new estat('fx');
+			aeval(vb,(v,i)=>{
+				//acumula pop
+				tp += v[2];
+				v[5] = fx;
+				ef.inc(''+fx,1);
+				if (tp>tPop) {
+					fx++ ; 
+					tp = 0;
+				}			
+			});
+		
+			//reordena por faixa / total mortes
+			tbe += '◦ localizações ordenadas por faixa e total de mortos/habitantes\n';
+			vb.sort((a,b)=>{
+				var r=fSort(a[5],b[5]); //fx 
+				if (r==0) r=fSort(b[6],a[6]); //total death desc
+				return r;
+			});
+			//divide faixas ao meio
+			tbe += '◦ divide faixas ao meio (+mais mortos/hab) e (-menos mortos/hab)\n';
+			var hf = ef.getVetor(); //hash contagem faixa
+			//console.log(hf);
+			var nf = 0;
+			fx=0;
+			aeval(vb,(v)=>{
+				if (v[5]==fx) {
+					nf++;
+				} else {
+					nf=0;
+					fx=v[5];
+				}
+				//eb(fx+' '+v[5]+' '+hf[v[5]]);
+				v[5] = v[5]+(nf<Math.floor(hf[v[5]]/2)?'+':'-');
+			});
+			//mostra
+			var tb = '<table class=bdToDom border=1>'
+				+'<tr><th>fx<th>nLoc<th>tPop<th>minPop<th>maxPop<th>total_deaths<th>'+vMd+'<br>por milhão'
+			;
+			var t; // pop,td*pop,d*pop,nv
+			var mi = 1000000;
+			fx = '0+';
+			aeval(vb,(v,i)=>{
+				//acumula
+				if (!t) t={p:0,pmi:9999999999999,pmx:0,td:0,d:0,n:0};
+				t.p+=v[2];
+				t.pmi=Math.min(v[2],t.pmi);
+				t.pmx=Math.max(v[2],t.pmx);
+				t.td+=v[3];
+				t.d+=v[4];
+				t.n++;
+				if (i+1==vb.length || vb[i+1][5]!=fx ) {
+					//add linha e zera
+					tb += '<tr '+(fx.indexOf('+')!=-1?'class="plus"':'')+'>'
+						+'<td>'+fx
+						+'<td>'+format(t.n)
+						+'<td>'+format(t.p)
+						+'<td>'+format(t.pmi)
+						+'<td>'+format(t.pmx)
+						+'<td>'+format(t.td/t.p*mi,2)
+						+'<td>'+format(t.d/t.p*mi,2)
+					;
+					if (i+1!=vb.length) fx = vb[i+1][5];
+					t=false;
+				}
+			});
+
+			addRebanhoO = [vb,domObj({tag:'div'
+				,'':'<pre>'+tbe+'</pre>'
+					+tb+'</table><br><hr>'
+				,ev_click: (ev)=>{
+					var fx = trimm(getParentByTagName(ev,'tr').childNodes.item(0).innerHTML,'+-');
+					var t = '<table class=bdToDom style="border:14px solid #eeeeee;background-color:#444444;"'
+						+'<tr><th>fx<th>loc<th>date<th>pop<th>mortos<th>tot mortos/mi<th>mortos dia'
+					;
+					aeval(addRebanhoO[0],(v)=> {
+						if (trimm(v[5],'+-')==fx) {
+							t += '<tr><td>'+v[5]+'<td>'+v[0]
+								+'<td>'+v[1]
+								+'<td>'+format(v[2],0)
+								+'<td>'+format(v[3],0)
+								+'<td>'+format(v[6]*1000000,0)
+								+'<td>'+format(v[4]/v[2]*1000000,2)
+							;
+						}
+					});
+					if (addRebanhoO[2]) addRebanhoO[2].hide();
+					addRebanhoO[2] = new contextDiv({
+						dom:domObj({
+							tag:'div'
+							,class:'menuV'
+							,'':t+'</table>'
+							,ev_click:(a)=>{addRebanhoO[2].close();}
+						})
+					});
+					addRebanhoO[2].center();						
+				}
+			}),false];
+		}
+		ds.appendChild(addRebanhoO[1]);	
+			
 	}
 	//***************************
 	// colore o mapa.
@@ -490,17 +732,15 @@ function covid(Id) {
 	function click(ev) {
 		var o = targetEvent(ev);
 		//lert('o='+o.tagName+' '+o);
-		if (o.name=='Pais') {
+		if (o.name=='go') {
+			window.location = pd.atalho();
+			return;
+		} else if (o.name=='Pais') {
 			//selecionou country
 			pais(o.value);
 			return;
-		} else if (o.name=='popMin') {
-			pd.putNum('popMin',o.value);
-			window.location = pd.atalho();
-			return;
-		} else if (o.name=='dMd') {
-			pd.putNum('dMd',o.value);
-			window.location = pd.atalho();
+		} else if ('-filtro-popMin-dMd-'.indexOf('-'+o.name+'-')!=-1) {
+			pd.putNum(o.name,trimm(o.value));
 			return;
 		} else if (o.name=='opTipo') {
 			//ds.innerHTML = '';
@@ -547,8 +787,6 @@ function covid(Id) {
 			return;
 		//click
 		tb.addEventListener('click',click,true);
-		//sort
-		//tabelaSort(tb);//lert('sort'+tb);
 		//negrita linhas país & colore tipo ugeo
 		var tr = tb.getElementsByTagName('tr');
 		for (var c=1;c<tr.length;c++) {
@@ -558,14 +796,28 @@ function covid(Id) {
 				cp.setAttribute('title'
 					,format(getPop(htmlDecode(p)),0)
 						+' hab. ('+c+'º)'
+						//+' fonte: '+getFonte(htmlDecode(p))
 				);
 				//negrita linha país
 				if (p==Pais) {
+					//eb('pais '+p);
 					tr[c].className = 'B';
+					if (tb.className.indexOf('latest')!=-1) {
+						//eb(Pais+' cl='+tb.className);
+						if (!paisClick) {
+							paisClick = domObj({tag:'table'
+									,class:'bdToDom paisClick'
+									,'':tr[0].cloneNode(true)
+							});
+						}
+						var nv=tr[c].cloneNode(true);
+						nv.className = '';
+						paisClick.appendChild(nv);
+					}
 					//break;
 				}
-				if (p.charAt(0)=='*') {
-					cp.style.cssText += 'background-color:#CFEF8F';//#CFEFFF
+				if (p.substring(1).indexOf('*')!=-1) {
+					cp.style.cssText += 'background-color:#8f8f8f;';//#CFEFFF
 					//cp.innerHTML = trimm(troca(p,'*',' '));
 				}
 			} catch (e) {
@@ -611,13 +863,7 @@ function covid(Id) {
 		domObj({tag:'input',name:'filtro',style:'font-size:80%;max-width:110px;'
 			,value:filtro
 			,title:'filtrar FONTE: 1=ourworldindata 2=covid.saude.gov.br 3=coronavirus.jhu.edu'
-			,ev_change:function(ev){
-					var v = trimm(ev.target.value);
-					if (v!=filtro) {
-						pd.put('filtro',ev.target.value);
-						window.location = pd.atalho();
-					}
-				}
+			,ev_change:click
 		,targ:dsC});		//select country
 		domObj({tag:'select',name:'Pais',style:'font-size:80%;max-width:110px;'
 			,'':troca(rr,'~','')
@@ -654,7 +900,14 @@ function covid(Id) {
 				+'<option'+(dMd==-5?' selected':'')+' value=-5>5 [n-2 .. n+2]'
 			,title:'days to calculate the moving average'
 			,ev_change:click
-		,targ:dsC});
+			,targ:dsC}
+		);
+		domObj({tag:'input',type:'button',name:'go'
+			,style:'font-size:70%;max-width:40px;background:green;'
+			,title:'days to calculate the moving average'
+			,value:' ✔ ',ev_click:click
+			,targ:dsC}
+		);
 
 	}
 	//***************************
@@ -729,33 +982,48 @@ function covid(Id) {
 		domObj({tag:'h2','':'World Summary - ('+opTipo+')',targ:ds});bd.toDom(ds,20,vr);
 		*/
 		
-		//dados do mundo
+		//dados todo mundo
 		//lert('vDia:'+vDia);
 		vDia.sort(fs);
 		var tit='latest data - ('+opTipo+')<br>'
 			+' population greater '+format(popMin,0)
 		;
-		//deb(vDia,vDia);
+		//eb(vDia,vDia);
 		tb.add({label:'latest',title:tit, obj:[
 			domObj({tag:'h2','':tit})
-			,tabEventos(bd.toDom({limit:999,values:vDia,fields:(a,i)=>{return i<8;}}))
+			,tabEventos(bd.toDom({class:'latest',limit:999,values:vDia,fields:(a,i)=>{return i<8;}}))
 		]});
+		
+		/////////////////////
+		tb.addTop({label:'rebanho',obj:[
+			domObj({tag:'h2','':'rebanho'})
+			,abaRebanho
+		]});
+		
+		/////////////////////
+		tb.addTop({label:'&nbsp;⬆⬇&nbsp;' ,obj:[
+			abaVariacoes
+		]});//			domObj({tag:'h2','':'maiores variações'})
 		
 	}
 	//***************************
 	function mostraPais(tb) {
+		//mostra país
+		deb('pais='+Pais);
 		//calcula data máxima do país
-		dt=''; 
-		bd.top();
-		bd.eval(function(){
-			//dt e max dias - bd está em ordem data.
-			if (bd.get('location')==Pais && dt<bd.get('date') ) {
-				dt = bd.get('date');
-				//alert(Pais+' '+dt);
-				aeval(days,function(x) {x[3] = bd.get(x[0]);}); //days maximos
-			} 
-		});
-
+		if (!dt) {
+			dt=''; 
+			bd.top();
+			bd.eval(function(){
+				//dt e max dias - bd está em ordem data.
+				if (bd.get('location')==Pais && dt<bd.get('date') ) {
+					dt = bd.get('date');
+					//alert(Pais+' '+dt);
+					aeval(days,function(x) {x[3] = bd.get(x[0]);}); //days maximos
+				} 
+			});
+		}
+		//pop
 		var pop = getPop(Pais);
 		if (pop<1) {
 			alert(Pais+' missing population');
@@ -838,6 +1106,7 @@ function covid(Id) {
 		aeval(vp,function(x){
 			//if (x[vv]>0) {
 				//var p = ;
+				//lert('x='+x+' '+strToDate(x[0]));
 				var lb = '<b>'+strToDate(x[0]).getDayStr3()+'</b> '+x[0]+'<br><b>'+x[vv]+'</b>º day'
 				//vg[p] = [ x[0]+'\n'+strToDate(x[0]).getDayStr3()+' '+x[vv]+'º day', 1*x[7] ];
 				//vg1[p] = [ vg[p][0], 1*x[6] ];
@@ -877,11 +1146,11 @@ function covid(Id) {
 			alert('vp.l='+vp.length+' vp='+vp);
 		}
 
-			
+		//objeto titulo/space
 		tb.addTop({label:'Graph',obj:[
 			//domObj({tag:'h2','':tPais+' - ('+opTipo+')'})
 			domObj({tag:'p','':'&nbsp;'})
-			,gr.toDom()
+			,domObj({tag:'div',class:'graf','':[paisClick,domObj({tag:'br'}),gr.toDom()]})
 			//,domObj({tag:'h3','':vMd1})
 			//,domObj({tag:'div','':(new graphLine(vg,{min:0,label:false,scalesx:true,titles:'teste'})).toHtml()})
 			//,domObj({tag:'div','':(new graphBar(vg1,{label:false})).getHtml()})
@@ -894,7 +1163,8 @@ function covid(Id) {
 		vp.sort(function(a,b) { return fSort(a[0],b[0],true); });
 		tb.addTop({label:'Data',obj:[
 			domObj({tag:'h2','':tPais+' - ('+opTipo+')'})
-			,tabEventos(bd.toDom({limit:999,values:vp}))
+			//,tabEventos(bd.toDom({limit:999,values:vp}))
+			,(bd.toDom({limit:999,values:vp}))
 		]});
 
 		//if (verDias) {
@@ -934,148 +1204,7 @@ function covid(Id) {
 			,ods.show()
 		]});
 		
-
-	}
-	//***************************
-	function mostraA_LIXO() {
-		//procura pais e pega dt, days maximos do país
-		//	e monta option selects
-		dt=''; 
-		bd.top();
-		bd.eval(function(){
-			//dt e max dias - bd está em ordem data.
-			if (bd.get('location')==Pais && dt<bd.get('date') ) {
-				dt = bd.get('date');
-				aeval(days,function(x) {x[3] = bd.get(x[0]);}); //days maximos
-			} 
-		});
-
-		var pop = getPop(Pais);
-		var tPais = Pais+' - '+format(pop,0)+' inhab.';
 		
-		//mostra data
-		domObj({tag:'h1',style:'margin:0;color:red;'
-			,'':dt
-		,targ:ds});
-		
-		//mostra mapa
-		alert('mapa');
-		if (false) {
-			mapa = domObj({tag:'div',style:'width:100%;',targ:ds,style:''});
-			(new carregaUrl()).abre(arqMap,function(a,b,tx) {
-				//lert('tx='+tx.length);
-				domObj({tag:'p','':'???',targ:mapa});
-				domObj({tag:'div',targ:mapa}).innerHTML = tx;
-				setTimeout(map,100);
-			});
-		}
-			
-		//monta evol ranking pais ult ne days
-		var ne = 14;
-		var bl = new bancoDados('evol '+Pais);
-		bl.className = 'eGeral';
-		//lert('dt='+dt);
-		for (var i=0;i<ne;i++) {
-			bl.addReg(); 
-			aeval(days,function(x) {
-					var ne1 = ne-i-1; //6-i
-					bl.set('date',leftAt(dataSql(strToData(dt).getTime()-ne1*1000*3600*24),' '));
-					var d = x[3]-ne1;
-					bl.set('day '+x[0],(d<1?'-':d+'º day'));
-					bl.set('position '+x[0],(d<1?'-':getPos(Pais,x[0],x[3]-ne1)+'º'));
-			});
-		}
-		
-		// monta resumo pais, mundo e dias
-		// date 0,location 1,new_cases 2,new_deaths 3,total_cases 4,total_deaths 5+days_c50 6+days_Nzero 7
-		bd.top();
-		var vd=[],vp=[],vr=[],ods = new total(2);
-		aeval(days,function(x){x[4]=[];});
-		while (bd.next()) {
-			var lo = bd.get('location');
-			var nc = bd.getNum('new_cases',0);
-			var nd = bd.getNum('new_deaths',0);
-						
-			//dados pais
-			if (lo==Pais && nc+nd
-					+bd.getNum('total_cases',0)+bd.getNum('total_deaths',0)>0 ) {
-				vp[vp.length] = bd.getVetor();
-			}
-			//dados mundo
-			if (bd.get('date')==dt) {
-				//resumo
-				if (bd.get(days[0][0])>0) {
-					vr[vr.length] = bd.getVetor();
-				}
-				vd[vd.length] = bd.getVetor();
-			}
-			//dados dias
-			aeval(days,function(x) {
-				if (bd.get(x[0])==x[3] && x[3] > 0) { //igual ao days do pais
-					x[4][x[4].length] = bd.getVetor();
-				}
-			});
-			//dia semana
-			var dds = bd.getDate('date').getDayStr();
-			if (Pais==lo || 'World'==lo) {
-				ods.inc([lo,dds,nc,nd]);
-				ods.inc([lo,'*',nc,nd]);
-			}
-		}
-		
-		//monta e mostra grafico
-		var vg = [];
-		var vv = 7;//days[0][0];
-		aeval(vp,function(x){
-			if (x[vv]>0) {
-				vg[vg.length] = [ strToDate(x[0]).getDayStr3()+'\n\n'+x[0]+
-					+'\n'+x[vv]+'º day', 1*x[6] 
-				];
-			}
-		});
-		//date	location	new_cases	new_deaths	total_cases	total_deaths	
-		//lert('vv='+vv+' vg='+vg);
-		vg.sort(function(a,b){return fSort(1*a[0],1*b[0]);});
-		domObj({tag:'h2','':tPais+' - '+vMd+' - ('+opTipo+')',targ:ds})
-		domObj({tag:'div',targ:ds,'':(new graphBar(vg,{label:false})).getHtml()});
-		
-		//mostra resumo world
-		vr.sort(fs);
-		vr.length = Math.min(vr.length,20);
-		domObj({tag:'h2','':'World Summary - ('+opTipo+')',targ:ds});bd.toDom(ds,20,vr);
-
-		//show dow
-		// totais
-		var tp = ods.getRow([Pais,'*']);
-		var tw = ods.getRow(['World','*']);
-		//add %
-		ods.aeval(function(v) {
-			var t = equals(v[0],Pais)?tp:tw;
-			v[4] = v[2]/t[2]*100;
-			v[5] = v[3]/t[3]*100;
-		});
-		ods.sort(function(a,b){return fSortCols(a,b,[5,4],[1,1]);});
-		domObj({tag:'h2','':'notifications by day of the week',targ:ds});
-		ods.cab = '<th>loc<th>dow<th>new cases<th>new deaths<th>% cases<th>% deaths';
-		ods.dec = [0,0,1,1];
-		ds.appendChild(ods.show());
-
-		
-		//ranking dias do país
-		domObj({tag:'h2','':'Evolution of the position: '+tPais+' - ('+opTipo+')',targ:ds});bl.toDom(ds,999);		
-
-		//mostra dias
-		aeval(days,function(x,nc) {
-			x[4].sort(fs);
-			domObj({tag:'h2','':tPais+' <b style="color:blue;">'+x[3]+'º</b> '+x[1]+' - ('+opTipo+')',targ:ds});
-			bd.toDom(ds,999,x[4]);
-			var tb = ds.lastChild;
-			tb.className += ' days_'+nc;
-		});
-		
-		//dados país
-		vp.sort(function(a,b) { return fSort(a[0],b[0],true); });
-		domObj({tag:'h2','':tPais+' - ('+opTipo+')',targ:ds});bd.toDom(ds,999,vp);
 
 	}
 	//***************************
@@ -1344,7 +1473,7 @@ function covid(Id) {
 		calcMediaDias(bdPop,true);
 		cron.ev('averanges bdHab');
 		if (dev()) {
-			alert('cron='+cron.txt());
+			deb('cron='+cron.txt());
 		}
 		
 		//redefine mostrar campo

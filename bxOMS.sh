@@ -24,8 +24,11 @@ arquiva() {
 	# depois - /dev/ploop16276p1   20G   14G  6,1G  69% /
 	# 1,2G Jun 21 13:55 covid19-2021-06-21-13-48-29-Seg.tar.gz
 	
+	
 	diasManter=28
 	diasCopiar=14 
+
+	log "init arquiva - diasManter=$diasManter diasCopiar=$diasCopiar"
 
 	# em /etc/crontab para todos os dias as 2
 	# 13 2 * * * root bash /srv/guarani/noticias/limpa.sh
@@ -34,11 +37,13 @@ arquiva() {
 	dd=/home/signey/bak/covid
 	adPrf=covid19
 	if [ "$(hostname)" == "rasp" ]; then
+		log "rasp"
 		od=/srv/http/coronavirus/dados
 		dd=/dados/webDados/covid
 	fi
 
-	at=/tmp/$adPrf-TMP-limpa.txt
+	aaq="$dd/$adPrf-$(date "+%Y-%m-%d-%H-%M-%S-%a")"
+	at=$aaq.log
 
 	#de 7 em 7 dias com janela 40min
 	temF=$(find $dd  -mmin -$[1440*$diasCopiar-40] -name "$adPrf-*.tar.gz" -ls)
@@ -46,10 +51,14 @@ arquiva() {
 		echo "===> ABORT tem feito $diasCopiar dias...
 			$temF
 		"
+		log "arquivo sair $temF"
 		exit 0
 	fi
 
-	ad="$dd/$adPrf-$(date "+%Y-%m-%d-%H-%M-%S-%a").tar.gz"
+	log "===>> iniciar arquiva
+$(df)"
+
+	ad="$aaq.tar.gz"
 
 	cd $od
 	find -mtime +$diasManter -type f|egrep -v "pop.csv|.7z|lixo" >$at
@@ -70,10 +79,18 @@ arquiva() {
 
 	#rm $at
 	ls -lh $ad
+	log "$(ls -lh $aaq*)
+===>> FIM arquiva
+$(df)"
 
 }
 
 ###########################################################
+# hop publica arquivos por dia e revê arquivos anteriores
+# rm dados/hop/*
+# bash bxOms.sh bxHopkinsTudo
+# zerar dados/hop.csv
+# executar hopUpdate.sh
 bxHopkinsTudo() {
 	if ! test -d $hopDr; then
 		echo "dir \"$hopDr\" não existe!"
@@ -122,7 +139,8 @@ bxHopkins() {
 	fi
 }
 
-
+##################################################
+##################################################
 bxOms() {
 	ur="https://www.who.int/emergencies/diseases/novel-coronavirus-2019/situation-reports/"
 	ds=/tmp/oms.html
@@ -148,6 +166,8 @@ bxOms() {
 	done
 }
 
+##################################################
+##################################################
 bxOurWorldInData() {
 	ant=$(ls -t full_data*.csv | head -n 1)
 	if [ "$ant" == "" ]; then
@@ -177,6 +197,8 @@ bxOurWorldInData() {
 	fi
 }
 
+##################################################
+##################################################
 bxCsv() {
 	local url="$1"
 	local tp="$2"
