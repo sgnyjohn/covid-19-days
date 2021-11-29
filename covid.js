@@ -162,8 +162,10 @@ function covid(Id) {
 		if (typeof(rg)=='number') {
 			bdLoc.reg(rg);
 			pop = bdLoc.getNum('pop');
+			if (!pop) deb(lo+' existe mas pop='+pop+' rg='+rg,1);
+		} else {
+			deb(lo+' não existe',1);		
 		}
-		if (!pop) alertDev(lo+' pop='+pop+' rg='+rg+' trg='+typeof(rg));		
 		return pop;
 	}
 	//***************************
@@ -254,6 +256,12 @@ function covid(Id) {
 				+'<pre>'+sErro+'</pre>'
 			});
 		}
+		//_c(abaVarO.getElementsByTagName('table'));
+		aeval(abaVarO.getElementsByTagName('table'),(vl)=>{
+			//deb('add evento tab aumentos...');
+			vl.className += ' aum';
+			tabEventos(vl);
+		});
 		ds.appendChild(abaVarO);
 	}
 	//***************************
@@ -731,7 +739,7 @@ function covid(Id) {
 	//***************************
 	function click(ev) {
 		var o = targetEvent(ev);
-		//lert('o='+o.tagName+' '+o);
+		//campos
 		if (o.name=='go') {
 			window.location = pd.atalho();
 			return;
@@ -739,7 +747,10 @@ function covid(Id) {
 			//selecionou country
 			pais(o.value);
 			return;
-		} else if ('-filtro-popMin-dMd-'.indexOf('-'+o.name+'-')!=-1) {
+		} else if ('-filtro-'.indexOf('-'+o.name+'-')!=-1) {
+			pd.put(o.name,trimm(o.value).toUpperCase());
+			return;
+		} else if ('-popMin-dMd-'.indexOf('-'+o.name+'-')!=-1) {
 			pd.putNum(o.name,trimm(o.value));
 			return;
 		} else if (o.name=='opTipo') {
@@ -787,11 +798,12 @@ function covid(Id) {
 			return;
 		//click
 		tb.addEventListener('click',click,true);
+		var pos = tb.className.indexOf('aum')==-1?1:0;
 		//negrita linhas país & colore tipo ugeo
 		var tr = tb.getElementsByTagName('tr');
 		for (var c=1;c<tr.length;c++) {
 			try {
-				var cp = tr[c].childNodes.item(1);
+				var cp = tr[c].childNodes.item(pos);
 				var p = cp.innerHTML;
 				cp.setAttribute('title'
 					,format(getPop(htmlDecode(p)),0)
@@ -1377,6 +1389,7 @@ function covid(Id) {
 					continue;
 				}
 				
+				//houve quebra de local, carrega apenas com pop > que ...
 				if (l!=la) {
 					pop = getPop(l);
 				}
