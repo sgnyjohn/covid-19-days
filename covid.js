@@ -227,8 +227,8 @@ function covid(Id) {
 				l = l1;
 			}
 			var cb = '<tr><th rowspan=2>local<th rowspan=2>população<th colspan=5>% variação<br>@@<th colspan=4>@@'
-				+'<tr><th>ult<br>semana<th>semana<br>anterior<th>2 últimas<br>semanas'
-						+'<th>nro<br>semamas<br>em alta<th>% medio<br>p/semana'
+				+'<tr><th>nro<br>semamas<br>em alta<th>% medio<br>p/semana'
+					+'<th>ult<br>semana<th>semana<br>anterior<th>2 últimas<br>semanas'
 				+'<th>'+dtf+'<th>-7 dias<th>-14 dias<th>'+dtf+'<br>milhão/hab.'
 			;
 			var t = '';
@@ -238,11 +238,11 @@ function covid(Id) {
 					t += '<tr>'
 						+'<td>'+vl.loc
 						+'<td>'+format(getPop(vl.loc),0) //vl.vdt
+						+'<td>'+format(vl.ds[0],0)
+						+'<td>'+format(vl.ds[1],2)
 						+'<td>'+format(vl.d0*100-100,2)
 						+'<td>'+format(vl.d1*100-100,2)
 						+'<td>'+format(vl.d*100-100,2)
-						+'<td>'+format(vl.ds[0],0)
-						+'<td>'+format(vl.ds[1],2)
 						+'<td>'+format(vl.vd[0],0)
 						+'<td>'+format(vl.vd[1],0)
 						+'<td>'+format(vl.vd[2],0)
@@ -257,11 +257,11 @@ function covid(Id) {
 					t1 += '<tr>'
 						+'<td>'+vl.loc
 						+'<td>'+format(getPop(vl.loc),0) //vl.vdt
+						+'<td>'+format(vl.cs[0],0)
+						+'<td>'+format(vl.cs[1],2)
 						+'<td>'+format(vl.c0*100-100,2)
 						+'<td>'+format(vl.c1*100-100,2)
 						+'<td>'+format(vl.c*100-100,2)
-						+'<td>'+format(vl.cs[0],0)
-						+'<td>'+format(vl.cs[1],2)
 						+'<td>'+format(vl.vc[0],0)
 						+'<td>'+format(vl.vc[1],0)
 						+'<td>'+format(vl.vc[2],0)
