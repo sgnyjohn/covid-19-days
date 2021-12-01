@@ -171,6 +171,19 @@ function covid(Id) {
 	//***************************
 	// aba variações
 	function abaVariacoes(ds) {
+		//f conta quantas semanas subindo vr
+		function abaVarSemanas(vr) {
+			//var l = bdOms.get('location');
+			var r = 0;
+			while (bdOms.get('location',0,-r*7-1)==l) {
+				if (bdOms.getNum(vr,0,-r*7)<=bdOms.getNum(vr,0,-r*7-7)) break;
+				r++;
+			}
+			//vlr atual/-r*7+7
+			var percent_medio = Math.pow(bdOms.getNum(vr,0,0)/bdOms.getNum(vr,0,-r*7),1/r)*100-100;
+			console.log(vr+' '+l+' '+bdOms.getNum(vr,0,0)+'/'+bdOms.getNum(vr,0,-r*7)+' %'+percent_medio+' r='+r);
+			return [r,percent_medio];			
+		}
 		if (!abaVarO) {
 			//ds.innerHTML = '<h1>vra</h1>';
 			var b = [];
@@ -181,13 +194,14 @@ function covid(Id) {
 			while (bdOms.next()) {
 				var l1 = bdOms.get('location',0,1);
 				//eb(l+' '+l1)
-				//quebra na proxima?
-				if ( l1 != l ) {
+				//quebra na proxima? e tem inf 14 dias atras?
+				if ( l1 != l && bdOms.get('location',0,-14)==l ) {
 					var vd = [bdOms.getNum(vMd),bdOms.getNum(vMd,0,-7),bdOms.getNum(vMd,0,-14)];
 					var pop = getPop(l);
 					if (pop==0) {
 						sErro += 'pop zero '+l+'\n';
 					} else if (l && vd[0]>0 && vd[1]>0 && vd[2]>0) {
+						//compara -2 semanas
 						var rg = b.length;
 						b[rg] = {};
 						b[rg].loc = l;
@@ -195,6 +209,9 @@ function covid(Id) {
 						b[rg].vd = vd;
 						var vc = [bdOms.getNum(vMd1),bdOms.getNum(vMd1,0,-7),bdOms.getNum(vMd1,0,-14)];
 						b[rg].vc = vc;
+						b[rg].ds = abaVarSemanas(vMd);
+						b[rg].cs = abaVarSemanas(vMd1);
+						//guarda datas ref
 						b[rg].vdt = [bdOms.get('date'),bdOms.get('date',0,-7),bdOms.get('date',0,-14)];
 						b[rg].c0 = vc[0]/vc[1];
 						b[rg].d0 = vd[0]/vd[1];
@@ -206,11 +223,12 @@ function covid(Id) {
 						b[rg].cm = vc[0]/pop*1000000;
 						nv++;
 					}
-					l = l1;
 				}
+				l = l1;
 			}
-			var cb = '<tr><th rowspan=2>local<th rowspan=2>população<th colspan=3>% variação<br>@@<th colspan=4>@@'
+			var cb = '<tr><th rowspan=2>local<th rowspan=2>população<th colspan=5>% variação<br>@@<th colspan=4>@@'
 				+'<tr><th>ult<br>semana<th>semana<br>anterior<th>2 últimas<br>semanas'
+						+'<th>nro<br>semamas<br>em alta<th>% medio<br>p/semana'
 				+'<th>'+dtf+'<th>-7 dias<th>-14 dias<th>'+dtf+'<br>milhão/hab.'
 			;
 			var t = '';
@@ -223,6 +241,8 @@ function covid(Id) {
 						+'<td>'+format(vl.d0*100-100,2)
 						+'<td>'+format(vl.d1*100-100,2)
 						+'<td>'+format(vl.d*100-100,2)
+						+'<td>'+format(vl.ds[0],0)
+						+'<td>'+format(vl.ds[1],2)
 						+'<td>'+format(vl.vd[0],0)
 						+'<td>'+format(vl.vd[1],0)
 						+'<td>'+format(vl.vd[2],0)
@@ -240,6 +260,8 @@ function covid(Id) {
 						+'<td>'+format(vl.c0*100-100,2)
 						+'<td>'+format(vl.c1*100-100,2)
 						+'<td>'+format(vl.c*100-100,2)
+						+'<td>'+format(vl.cs[0],0)
+						+'<td>'+format(vl.cs[1],2)
 						+'<td>'+format(vl.vc[0],0)
 						+'<td>'+format(vl.vc[1],0)
 						+'<td>'+format(vl.vc[2],0)
