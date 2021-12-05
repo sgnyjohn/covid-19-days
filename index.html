@@ -11,6 +11,13 @@
 <script charset="UTF-8"  language="JavaScript" src="covid.js"></script>
 
 <style>
+:root {
+ --corFd: #353535; // fundo destac
+ --corF: #2d2d2d; // fundo
+ --corFdS: #1e1e1e; // fundo sel/hover
+ --corLink: #1f76e1; 
+ --corL: #eeeeec; // letra/font
+}
 	
 BODY {background-color:#030405;color:#eaebec;}
 A {color:#eaebec;}
@@ -119,6 +126,14 @@ TABLE.tabs TABLE  {
 TABLE TR.plus {
 	xborder:1px solid white;
 	background-color:#663333;
+}
+
+TABLE.bdToDom TR {
+	background-color:#0F1F2F;
+}
+TABLE.bdToDom TR:hover {
+	Xfilter: hue-rotate(90deg);
+	filter: invert(1);
 }
 
 </style>

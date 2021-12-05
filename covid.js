@@ -1029,15 +1029,15 @@ function covid(Id) {
 		]});
 		
 		/////////////////////
+		tb.addTop({label:'&nbsp;⬆⬇&nbsp;' ,obj:[
+			abaVariacoes
+		]});//			domObj({tag:'h2','':'maiores variações'})
+
+		/////////////////////
 		tb.addTop({label:'rebanho',obj:[
 			domObj({tag:'h2','':'rebanho'})
 			,abaRebanho
 		]});
-		
-		/////////////////////
-		tb.addTop({label:'&nbsp;⬆⬇&nbsp;' ,obj:[
-			abaVariacoes
-		]});//			domObj({tag:'h2','':'maiores variações'})
 		
 	}
 	//***************************
