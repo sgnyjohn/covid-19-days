@@ -86,8 +86,8 @@ function covid(Id) {
 	var doc = document;
 	var ds,dsC;
 	var bd; // bd ativo 
-	var bdOms; //bd val abs
-	var bdPop; //bd por população 
+	var bdOms; //bd DADOS val abs
+	var bdPop; //bd DADOS por população 
 	var bdLoc; //bd Locais
 	var div = 1000000;
 	var casas = 100; 
@@ -117,6 +117,7 @@ function covid(Id) {
 		,['europa','~Russia~Ukraine~France~Spain~Sweden~Norway~Germany~Finland~Poland~Italy~United Kingdom~Romania~Belarus~Kazakhstan~Greece~Bulgaria~Iceland~Hungary~Portugal~Austria~Czechia~Serbia~Ireland~Lithuania~Latvia~Croatia~Bosnia and Herzegovina~Slovakia~Estonia~Denmark~Switzerland~Netherlands~Moldova~Belgium~Armenia~Albania~North Macedonia~Turkey~Slovenia~Montenegro~Kosovo~Cyprus~Azerbaijan~Luxembourg~Georgia~Andorra~Malta~Liechtenstein~San Marino~Monaco~Vatican City~']
 		,['european union','~Austria~Belgium~Bulgaria~Croatia~Cyprus~Czech Republic~Denmark~Estonia~Finland~France~Germany~Greece~Hungary~Republic of Ireland~Italy~Latvia~Lithuania~Luxembourg~Malta~Netherlands~Poland~Portugal~Romania~Slovakia~Slovenia~Spain~Sweden~']
 	]
+	var tag=[];
 	//lert('days='+days);
 	var map;
 	var tb;
@@ -1520,9 +1521,11 @@ function covid(Id) {
 			}
 			//lert('mult='+bdPop.mult);
 			return format(rg[cmp]*1,0);
-		}		
+		}
 		bdPop.showField = function(rg,cmp) {
-			if ( (cmp<2 || cmp>7) && cmp!=10 ) {
+			if (cmp==0) {
+				return rg[cmp]+' '+strToDate(rg[cmp]).getDayStr3();
+			} else if ( (cmp<2 || cmp>7) && cmp!=10 ) {
 				return rg[cmp];
 			}
 			return format(rg[cmp]*1,2);

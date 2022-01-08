@@ -1,5 +1,16 @@
 #!/bin/bash
 
+#crontab
+##covid19 toda hora aos 26 min
+#26 * * * * root	bash /var/www/lar.art.br/dev/coronavirus/bxOMS.sh
+##todo dia as 5h46m
+#46 5 * * * root bash /var/www/lar.art.br/dev/coronavirus/bxOMS.sh arquiva
+
+
+
+. /home/signey/bin/mailAdm.sh
+
+
 log() {
 	local lg=/var/log/coronavirus-bx.log
 	echo "$(date "+%Y-%m-%d	não %H:%M:%S_%a")	$1" >>$lg
@@ -83,6 +94,8 @@ $(df)"
 ===>> FIM arquiva
 $(df)"
 
+	mailAdm "limpeza servidor" "$(LANG=C df -h|egrep "^/dev/|Avai")"
+
 }
 
 ###########################################################
@@ -131,6 +144,7 @@ bxHopkins() {
 			rm $ad
 		elif test -e $ad; then
 			log "vai processar $aq"
+			mailAdm "bxOMS.sh Hopkings aq=$aq" "$(LANG=C df -h|egrep "^/dev/|Avai")"
 			local x=$(pwd)
 			cd $alvo/..
 			bash hopUpdate.sh
@@ -182,13 +196,14 @@ bxOurWorldInData() {
 	url="https://covid.ourworldindata.org/data/owid-covid-data.csv"
 	# ou ?
 	#url="https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/owid-covid-data.csv"
-	wget -O $tmp "$url"
+	wget -q -O $tmp "$url"
 	if [ $? -ne 0 ]; then
 		echo "erro bx "
 		rm $tmp
 	elif cmp $ant $tmp; then
 		echo "iguais"; #read
 	else
+		mailAdm "bxOMS.sh OurWorldInData $nov" "$(LANG=C df -h|egrep "^/dev/|Avai")"
 		ln=last.csv
 		echo "dif"; #read
 		mv $tmp $nov
