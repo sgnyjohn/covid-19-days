@@ -28,6 +28,12 @@ cd $alvo
 hopWeb="https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/"
 hopDr=hop
 
+
+eLivre() {
+	echo "livre $(LANG=C df $alvo -h|grep /dev/|awk '{print $5}')"
+}
+
+
 #########################################
 #arquiva dados em gz
 arquiva() {
@@ -35,9 +41,15 @@ arquiva() {
 	# depois - /dev/ploop16276p1   20G   14G  6,1G  69% /
 	# 1,2G Jun 21 13:55 covid19-2021-06-21-13-48-29-Seg.tar.gz
 	
+	#limpa backup tmp
+	echo "-->tem /home/backup/tmp*" 
+	if test -d /home/backup; then
+		rm -rfv /home/backup/tmp*
+	fi
 	
-	diasManter=28
-	diasCopiar=14 
+	
+	diasManter=14
+	diasCopiar=4 
 
 	log "init arquiva - diasManter=$diasManter diasCopiar=$diasCopiar"
 
@@ -94,7 +106,7 @@ $(df)"
 ===>> FIM arquiva
 $(df)"
 
-	mailAdm "limpeza servidor" "$(LANG=C df -h|egrep "^/dev/|Avai")"
+	mailAdm "$(eLivre) limpeza servidor" "$(LANG=C df -h|egrep "^/dev/|Avai")"
 
 }
 
@@ -144,7 +156,7 @@ bxHopkins() {
 			rm $ad
 		elif test -e $ad; then
 			log "vai processar $aq"
-			mailAdm "bxOMS.sh Hopkings aq=$aq" "$(LANG=C df -h|egrep "^/dev/|Avai")"
+			mailAdm "$(eLivre) bxOMS.sh Hopkings aq=$aq" "$(LANG=C df -h|egrep "^/dev/|Avai")"
 			local x=$(pwd)
 			cd $alvo/..
 			bash hopUpdate.sh
@@ -203,7 +215,7 @@ bxOurWorldInData() {
 	elif cmp $ant $tmp; then
 		echo "iguais"; #read
 	else
-		mailAdm "bxOMS.sh OurWorldInData $nov" "$(LANG=C df -h|egrep "^/dev/|Avai")"
+		mailAdm "$(eLivre) bxOMS.sh OurWorldInData $nov" "$(LANG=C df -h|egrep "^/dev/|Avai")"
 		ln=last.csv
 		echo "dif"; #read
 		mv $tmp $nov

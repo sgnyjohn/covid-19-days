@@ -288,7 +288,7 @@ function covid(Id) {
 		ds.appendChild(abaVarO);
 	}
 	//***************************
-	// add análise rebanho
+	// MONTA análise rebanho
 	function abaRebanho(ds) {
 		if (!addRebanhoO) {
 			var tbe = '';
@@ -367,15 +367,17 @@ function covid(Id) {
 					fx=v[5];
 				}
 				//eb(fx+' '+v[5]+' '+hf[v[5]]);
-				v[5] = v[5]+(nf<Math.floor(hf[v[5]]/2)?'+':'-');
+				v[5] = v[5]+(nf==0||nf<Math.floor(hf[v[5]]/2)?'+':'-');
 			});
-			//mostra
+			//////////////////////////
+			//monta TOTAIS e MOSTRA
 			var tb = '<table class=bdToDom border=1>'
 				+'<tr><th>fx<th>nLoc<th>tPop<th>minPop<th>maxPop<th>total_deaths<th>'+vMd+'<br>por milhão'
 			;
 			var t; // pop,td*pop,d*pop,nv
 			var mi = 1000000;
 			fx = '0+';
+			var fxM,fxA=''; //vlr + da fx e fx ant
 			aeval(vb,(v,i)=>{
 				//acumula
 				if (!t) t={p:0,pmi:9999999999999,pmx:0,td:0,d:0,n:0};
@@ -387,7 +389,8 @@ function covid(Id) {
 				t.n++;
 				if (i+1==vb.length || vb[i+1][5]!=fx ) {
 					//add linha e zera
-					tb += '<tr '+(fx.indexOf('+')!=-1?'class="plus"':'')+'>'
+					//tb += '<tr '+(fx.indexOf('+')!=-1?'class="plus"':'')+'>'
+					tb += '<tr '+(fxA != v[5].charAt(0)?'class="plus"':'')+'>'
 						+'<td>'+fx
 						+'<td>'+format(t.n)
 						+'<td>'+format(t.p)
@@ -397,6 +400,7 @@ function covid(Id) {
 						+'<td>'+format(t.d/t.p*mi,2)
 					;
 					if (i+1!=vb.length) fx = vb[i+1][5];
+					fxA = v[5].charAt(0);
 					t=false;
 				}
 			});
@@ -1404,6 +1408,8 @@ function covid(Id) {
 			br.top();
 			var nv=0,nb=0;
 			var pop,la='';
+			var vI = {};
+			var vIn=0;
 			while (br.next()) {
 				nv++;
 				var l = br.get('location');
@@ -1445,9 +1451,13 @@ function covid(Id) {
 				}
 				fCorr('cases');
 				fCorr('deaths');
-				
-				if (pop>=popMin) {
+
+				if (vI[br.get('date')+l]) {
+					//duplo, ignora.
+					vIn++;
+				} else if (pop>=popMin) {
 					bdOms.addReg();
+					vI[br.get('date')+l] = bdOms.reg()+1;
 					bdOms.set('date',br.get('date'));
 					bdOms.set('location',l);
 					bdOms.set('new_cases',br.get('new_cases'));
@@ -1460,6 +1470,7 @@ function covid(Id) {
 			}
 			debJ('FIM carregaGOV.BR - nv='+nv+' bugs='+nb);
 			//lert('fim br nv='+nv);
+			alert(vIn+' registros duplos em BR\n\n'+objText(vI,'\n',':'));
 		} catch (e) {
 			alert('error bd br '+erro(e));
 		}
