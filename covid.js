@@ -372,12 +372,15 @@ function covid(Id) {
 			//////////////////////////
 			//monta TOTAIS e MOSTRA
 			var tb = '<table class=bdToDom border=1>'
-				+'<tr><th>fx<th>nLoc<th>tPop<th>minPop<th>maxPop<th>total_deaths<th>'+vMd+'<br>por milhão'
+				+'<tr><th>fx<th>nLoc<th>tPop<th>minPop'
+				+'<th>maxPop<th>total_deaths<th>'+vMd+'<br>por milhão'
+				+'<th>vidas poupadas'
 			;
 			var t; // pop,td*pop,d*pop,nv
 			var mi = 1000000;
 			fx = '0+';
 			var fxM,fxA=''; //vlr + da fx e fx ant
+			var vo=[];
 			aeval(vb,(v,i)=>{
 				//acumula
 				if (!t) t={p:0,pmi:9999999999999,pmx:0,td:0,d:0,n:0};
@@ -388,22 +391,31 @@ function covid(Id) {
 				t.d+=v[4];
 				t.n++;
 				if (i+1==vb.length || vb[i+1][5]!=fx ) {
-					//add linha e zera
-					//tb += '<tr '+(fx.indexOf('+')!=-1?'class="plus"':'')+'>'
-					tb += '<tr '+(fxA != v[5].charAt(0)?'class="plus"':'')+'>'
-						+'<td>'+fx
-						+'<td>'+format(t.n)
-						+'<td>'+format(t.p)
-						+'<td>'+format(t.pmi)
-						+'<td>'+format(t.pmx)
-						+'<td>'+format(t.td/t.p*mi,2)
-						+'<td>'+format(t.d/t.p*mi,2)
-					;
+					//guarda em vo
+					t.fx = fx;
+					vo[vo.length] = clone(t);
 					if (i+1!=vb.length) fx = vb[i+1][5];
 					fxA = v[5].charAt(0);
 					t=false;
 				}
 			});
+
+			//mostra res.
+			aeval(vo,(t,i)=>{
+				var tr = i%2==0?vo[i+1]:vo[i-1];
+				tb += (i%2==0?'<tr><td colspan=8>':'')
+					+'<tr>'// '+(fxA != v[5].charAt(0)?'class="plus"':'')+'>'
+					+'<td>'+t.fx
+					+'<td>'+format(t.n)
+					+'<td>'+format(t.p) 
+					+'<td>'+format(t.pmi)
+					+'<td>'+format(t.pmx)
+					+'<td>'+format(t.td/t.p*mi,2)
+					+'<td>'+format(t.d/t.p*mi,2)
+					+'<td>'+format((t.td/t.p-tr.td/tr.p)*t.p,0)
+				;
+			});
+
 
 			addRebanhoO = [vb,domObj({tag:'div'
 				,'':'<pre>'+tbe+'</pre>'

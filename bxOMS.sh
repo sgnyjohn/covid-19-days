@@ -13,7 +13,7 @@
 
 log() {
 	local lg=/var/log/coronavirus-bx.log
-	echo "$(date "+%Y-%m-%d	não %H:%M:%S_%a")	$1" >>$lg
+	echo "$(date "+%Y-%m-%d %H:%M:%S_%a")	$1" >>$lg
 }
 
 log "bxOms init"
@@ -40,19 +40,16 @@ arquiva() {
 	# antes - /dev/ploop16276p1  20509264 18851156    1170128  95% /
 	# depois - /dev/ploop16276p1   20G   14G  6,1G  69% /
 	# 1,2G Jun 21 13:55 covid19-2021-06-21-13-48-29-Seg.tar.gz
-	
-	#limpa backup tmp
-	echo "-->tem /home/backup/tmp*" 
-	if test -d /home/backup; then
-		rm -rfv /home/backup/tmp*
-	fi
-	
-	
+
 	diasManter=14
 	diasCopiar=4 
 
-	log "init arquiva - diasManter=$diasManter diasCopiar=$diasCopiar"
-
+	#limpa backup tmp
+	if test -d /home/backup; then
+		log "-->tem /home/backup/tmp*" 
+		rm -rfv /home/backup/tmp*
+	fi
+	
 	# em /etc/crontab para todos os dias as 2
 	# 13 2 * * * root bash /srv/guarani/noticias/limpa.sh
 
@@ -68,18 +65,15 @@ arquiva() {
 	aaq="$dd/$adPrf-$(date "+%Y-%m-%d-%H-%M-%S-%a")"
 	at=$aaq.log
 
-	#de 7 em 7 dias com janela 40min
+	#de $diasCopiar em $diasCopiar dias com janela 40min
 	temF=$(find $dd  -mmin -$[1440*$diasCopiar-40] -name "$adPrf-*.tar.gz" -ls)
 	if [ "$temF" != "" ]; then
-		echo "===> ABORT tem feito $diasCopiar dias...
-			$temF
-		"
-		log "arquivo sair $temF"
+		log "===> nao ARQ tem feito $diasCopiar dias... $temF"
 		exit 0
 	fi
 
-	log "===>> iniciar arquiva
-$(df)"
+	log "===>> iniciar ARQ - diasManter=$diasManter diasCopiar=$diasCopiar
+$(df|grep /dev)"
 
 	ad="$aaq.tar.gz"
 
@@ -91,20 +85,23 @@ $(df)"
 
 	#exclui?
 	if [ $f -eq 0 ]; then
+		log "==> remover arqs"
 		cat $at|while read ln; do
 			if true; then
-				rm -fv $ln
+				rm -fv "$ln"
 			else
 				echo "rm $ln"
 			fi
 		done
+	else
+		log "==> NÃO? remover arqs"
 	fi
 
 	#rm $at
 	ls -lh $ad
 	log "$(ls -lh $aaq*)
 ===>> FIM arquiva
-$(df)"
+$(df|grep /dev)"
 
 	mailAdm "$(eLivre) limpeza servidor" "$(LANG=C df -h|egrep "^/dev/|Avai")"
 
