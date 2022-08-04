@@ -339,7 +339,8 @@ function covid(Id) {
 				//acumula pop
 				tp += v[2];
 				v[5] = fx;
-				ef.inc(''+fx,1);
+				ef.min('min'+fx,v[6]);
+				ef.max('max'+fx,v[6]);
 				if (tp>tPop) {
 					fx++ ; 
 					tp = 0;
@@ -349,26 +350,27 @@ function covid(Id) {
 			//reordena por faixa / total mortes
 			tbe += '◦ localizações ordenadas por faixa e total de mortos/habitantes\n';
 			vb.sort((a,b)=>{
-				var r=fSort(a[5],b[5]); //fx 
+				var r=fSort(a[5],b[5]); //fx sem o +-
 				if (r==0) r=fSort(b[6],a[6]); //total death desc
 				return r;
 			});
+			
 			//divide faixas ao meio
-			tbe += '◦ divide faixas ao meio (+mais mortos/hab) e (-menos mortos/hab)\n';
+			tbe += '◦ divide faixas pela mediana (+mais mortos/hab) e (-menos mortos/hab)\n';
 			var hf = ef.getVetor(); //hash contagem faixa
-			//console.log(hf);
-			var nf = 0;
-			fx=0;
-			aeval(vb,(v)=>{
-				if (v[5]==fx) {
-					nf++;
-				} else {
-					nf=0;
-					fx=v[5];
+			var fx = -1, lm;
+			aeval(vb,(v,i)=>{
+				if (v[5]!=fx) {
+					fx = v[5];
+					//calc limite = max - (max-min)/2
+					lm = hf['max'+fx]-(hf['max'+fx]-hf['min'+fx])/2;
 				}
-				//eb(fx+' '+v[5]+' '+hf[v[5]]);
-				v[5] = v[5]+(nf==0||nf<Math.floor(hf[v[5]]/2)?'+':'-');
+				//tp += v[2];
+				//v[5] = fx+(tp<tPop/2?'+':'-');
+				v[5] = fx+(v[6]<lm?'-':'+');
 			});
+			//lert('tp='+tp+' tPop='+tPop);			
+
 			//////////////////////////
 			//monta TOTAIS e MOSTRA
 			var tb = '<table class=bdToDom border=1>'
@@ -377,10 +379,7 @@ function covid(Id) {
 				+'<th>vidas poupadas'
 			;
 			var t; // pop,td*pop,d*pop,nv
-			var mi = 1000000;
-			fx = '0+';
-			var fxM,fxA=''; //vlr + da fx e fx ant
-			var vo=[];
+			var fxq=vb[0][5], vo=[];
 			aeval(vb,(v,i)=>{
 				//acumula
 				if (!t) t={p:0,pmi:9999999999999,pmx:0,td:0,d:0,n:0};
@@ -390,19 +389,19 @@ function covid(Id) {
 				t.td+=v[3];
 				t.d+=v[4];
 				t.n++;
-				if (i+1==vb.length || vb[i+1][5]!=fx ) {
+				if (i+1==vb.length || vb[i+1][5]!=fxq ) {
 					//guarda em vo
-					t.fx = fx;
+					t.fx = fxq;
 					vo[vo.length] = clone(t);
-					if (i+1!=vb.length) fx = vb[i+1][5];
-					fxA = v[5].charAt(0);
+					if (i+1!=vb.length) fxq = vb[i+1][5];
 					t=false;
 				}
 			});
 
 			//mostra res.
+			var idx = index(vo,'fx');
 			aeval(vo,(t,i)=>{
-				var tr = i%2==0?vo[i+1]:vo[i-1];
+				var tr = idx[t.fx.substring(0,1)+(t.fx.substring(1)=='-'?'+':'-')];
 				tb += (i%2==0?'<tr><td colspan=8>':'')
 					+'<tr '+(t.fx.indexOf('+')!=-1?'class="plus"':'')+'>'
 					+'<td>'+t.fx
@@ -410,9 +409,9 @@ function covid(Id) {
 					+'<td>'+format(t.p) 
 					+'<td>'+format(t.pmi)
 					+'<td>'+format(t.pmx)
-					+'<td>'+format(t.td/t.p*mi,2)
-					+'<td>'+format(t.d/t.p*mi,2)
-					+'<td>'+format((t.td/t.p-tr.td/tr.p)*t.p,0)
+					+'<td>'+format(t.td/t.p*div,2)
+					+'<td>'+format(t.d/t.p*div,2)
+					+'<td>'+(tr?format((-t.td/t.p+tr.td/tr.p)*t.p,0):'-')
 				;
 			});
 
@@ -422,17 +421,23 @@ function covid(Id) {
 					+tb+'</table><br><hr>'
 				,ev_click: (ev)=>{
 					var fx = trimm(getParentByTagName(ev,'tr').childNodes.item(0).innerHTML,'+-');
+					var ln = getParentByTagName(ev,'table').getElementsByTagName('tr');
 					var t = '<table class=bdToDom style="border:14px solid #eeeeee;background-color:#444444;"'
 						+'<tr><th>fx<th>loc<th>date<th>pop<th>mortos<th>tot mortos/mi<th>mortos dia'
+						+'<th>vidas<br>poupadas'
 					;
+					var idx = index(vo,'fx');
 					aeval(addRebanhoO[0],(v)=> {
 						if (trimm(v[5],'+-')==fx) {
+							var tr = idx[fx+(v[5].indexOf('-')!=-1?'+':'-')];
 							t += '<tr><td>'+v[5]+'<td>'+v[0]
 								+'<td>'+v[1]
-								+'<td>'+format(v[2],0)
+								+'<td>'+format(v[2],0)  //pop
 								+'<td>'+format(v[3],0)
 								+'<td>'+format(v[6]*1000000,0)
 								+'<td>'+format(v[4]/v[2]*1000000,2)
+								//+'<td>'+(tr?format((t.td/t.p-tr.td/tr.p)*t.p,0):'-')
+								+'<td>'+(tr?format((-v[6]+tr.td/tr.p)*v[2],0):'-')
 							;
 						}
 					});
