@@ -404,7 +404,7 @@ function covid(Id) {
 			aeval(vo,(t,i)=>{
 				var tr = i%2==0?vo[i+1]:vo[i-1];
 				tb += (i%2==0?'<tr><td colspan=8>':'')
-					+'<tr>'// '+(fxA != v[5].charAt(0)?'class="plus"':'')+'>'
+					+'<tr '+(t.fx.indexOf('+')!=-1?'class="plus"':'')+'>'
 					+'<td>'+t.fx
 					+'<td>'+format(t.n)
 					+'<td>'+format(t.p) 
